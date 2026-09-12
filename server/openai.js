@@ -1,15 +1,18 @@
-import OpenAI from "openai";
+import {GoogleGenAI} from "@google/genai";
 
 let client;
+
 function getClient() {
-  if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
-  client ??= new OpenAI({apiKey: process.env.OPENAI_API_KEY});
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured");
+  }
+  client ??= new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY});
   return client;
 }
 
 export function modelFor(kind="text") {
-  if (kind === "coding") return process.env.OPENAI_CODING_MODEL || process.env.OPENAI_MODEL || "gpt-5.6-luna";
-  return process.env.OPENAI_MODEL || "gpt-5.6-luna";
+  if (kind === "coding") return process.env.GEMINI_CODING_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  return process.env.GEMINI_MODEL || "gemini-2.5-flash";
 }
 
 export function classify(text) {
@@ -44,35 +47,54 @@ export function buildInstructions(settings, kind) {
 }
 
 export async function streamResponse({messages, settings, kind, useWeb=false, signal}) {
-  const client = getClient();
-  const input = messages.map(m => ({role:m.role, content:m.content}));
-  const params = {
-    model: modelFor(kind),
-    instructions: buildInstructions(settings, kind),
-    input,
-    stream: true
+  const ai = getClient();
+  const contents = messages.map(m => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{text: m.content}]
+  }));
+
+  const config = {
+    systemInstruction: buildInstructions(settings, kind)
   };
-  if (useWeb) params.tools = [{type:"web_search_preview"}];
-  return client.responses.create(params, {signal});
+
+  if (useWeb) {
+    config.tools = [{googleSearch: {}}];
+  }
+
+  return ai.models.generateContentStream({
+    model: modelFor(kind),
+    contents,
+    config
+  });
 }
 
 export async function generateImage({prompt, imageFile, size="1024x1024"}) {
-  const client = getClient();
+  const ai = getClient();
+
+  const parts = [{text: prompt}];
+
   if (imageFile) {
     const fs = await import("node:fs");
     const buffer = fs.readFileSync(imageFile);
-    const file = new File([buffer], imageFile.split("/").pop(), {type:"image/png"});
-    const result = await client.images.edit({
-      model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-2",
-      image: file,
-      prompt,
-      size
+    const mimeType = imageFile.toLowerCase().endsWith(".jpg") || imageFile.toLowerCase().endsWith(".jpeg")
+      ? "image/jpeg"
+      : "image/png";
+
+    parts.unshift({
+      inlineData: {
+        mimeType,
+        data: buffer.toString("base64")
+      }
     });
-    return result;
   }
-  return client.images.generate({
-    model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-2",
-    prompt,
-    size
+
+  const response = await ai.models.generateContent({
+    model: process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image",
+    contents: [{role: "user", parts}],
+    config: {
+      responseModalities: ["TEXT", "IMAGE"]
+    }
   });
+
+  return response;
 }
