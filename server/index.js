@@ -35,7 +35,10 @@ app.use(cookieSession({
   sameSite: "lax",
   secure: process.env.NODE_ENV === "production"
 }));
-app.use(express.static(path.resolve("public")));
+// no-store: without this, browsers happily cache app.js/styles.css/index.html
+// and keep running old code after every deploy, making fixes look like they
+// "didn't work" when really the old script was just still running.
+app.use(express.static(path.resolve("public"), { etag:false, lastModified:false, setHeaders:(res)=>res.set("Cache-Control","no-store") }));
 
 function jsonError(res, status, message, code="ERROR") {
   return res.status(status).json({ok:false,error:{code,message}});
@@ -308,6 +311,7 @@ app.get("/api/health",(req,res)=>res.json({ok:true,configured:Boolean(process.en
 
 app.use((req,res)=>{
   if(req.path.startsWith("/api/")) return jsonError(res,404,"API route not found","NOT_FOUND");
+  res.set("Cache-Control","no-store");
   res.sendFile(path.resolve("public/index.html"));
 });
 
