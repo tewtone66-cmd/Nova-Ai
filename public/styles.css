@@ -600,3 +600,64 @@ body.anim-extra .send-btn:hover{transform:translateY(-3px) scale(1.05)}
     min-width:150px;
   }
 }
+.composer-wrap{
+  padding:8px 10px 10px !important;
+}
+
+.composer{
+  width:100%;
+  max-width:900px;
+  gap:6px;
+}
+
+.composer textarea{
+  min-width:0;
+  width:100%;
+  min-height:42px;
+  max-height:120px;
+  padding:10px 12px;
+  box-sizing:border-box;
+}
+
+.composer-tools{
+  flex:0 0 auto;
+  gap:3px;
+}
+
+.ai-mode-picker{
+  flex:0 0 auto;
+  max-width:105px;
+}
+
+.ai-mode-picker-btn{
+  max-width:105px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+@media(max-width:600px){
+  .composer{
+    gap:4px;
+  }
+
+  .ai-mode-picker-btn{
+    width:42px;
+    padding:0 5px;
+    overflow:hidden;
+    font-size:0;
+  }
+
+  .ai-mode-picker-btn span:last-child{
+    font-size:14px;
+  }
+
+  .composer-tools .tool-btn{
+    width:32px;
+  }
+
+  .send-btn,
+  .round-btn{
+    width:36px;
+    height:36px;
+  }
+}
