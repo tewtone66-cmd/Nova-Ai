@@ -11,8 +11,8 @@ function getClient() {
 }
 
 export function modelFor(kind="text") {
-  if (kind === "coding") return process.env.GEMINI_CODING_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  return process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  if (kind === "coding") return process.env.GEMINI_CODING_MODEL || process.env.GEMINI_MODEL || "gemini-3.6-flash";
+  return process.env.GEMINI_MODEL || "gemini-3.6-flash";
 }
 
 export function classify(text) {
@@ -89,7 +89,7 @@ export async function generateImage({prompt, imageFile, size="1024x1024"}) {
   }
 
   const response = await ai.models.generateContent({
-    model: process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image",
+    model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.6-flash-image",
     contents: [{role: "user", parts}],
     config: {
       responseModalities: ["TEXT", "IMAGE"]
