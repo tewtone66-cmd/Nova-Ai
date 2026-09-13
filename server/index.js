@@ -96,17 +96,16 @@ app.post("/api/chat", async (req,res)=>{
     const stream=await streamResponse({messages,settings:db.settings,kind,useWeb,signal:controller.signal});
     let full="";
     for await (const event of stream) {
-      if(event.type==="response.output_text.delta"){
-        full += event.delta;
-        res.write(`data:${JSON.stringify({type:"delta",delta:event.delta})}\n\n`);
-      }
-      if(event.type==="response.completed"){
-        const used=Math.max(1, Math.min(10, Math.ceil(full.length/900)));
-        db.settings.limit=Math.max(0,db.settings.limit-used);
-        save(db);
-        res.write(`data:${JSON.stringify({type:"done",requestId,limit:db.settings.limit})}\n\n`);
+      const delta = typeof event.text === "string" ? event.text : "";
+      if(delta){
+        full += delta;
+        res.write(`data:${JSON.stringify({type:"delta",delta})}\n\n`);
       }
     }
+    const used=Math.max(1, Math.min(10, Math.ceil(full.length/900)));
+    db.settings.limit=Math.max(0,db.settings.limit-used);
+    save(db);
+    res.write(`data:${JSON.stringify({type:"done",requestId,limit:db.settings.limit})}\n\n`);
   } catch(e) {
     const aborted=controller.signal.aborted;
     res.write(`data:${JSON.stringify({type:aborted?"stopped":"error",message:aborted?"Generation stopped":(e.message||"OpenAI request failed")})}\n\n`);
