@@ -51,21 +51,20 @@ function avatarHTML(src,fallback,cls="avatar"){return src?`<div class="${cls}"><
 function showAuthScreen(){
   $("#app").classList.add("hidden");
   $("#authScreen").classList.remove("hidden");
+  showWelcomeScreen();
 }
 function hideAuthScreen(){
   $("#authScreen").classList.add("hidden");
   $("#app").classList.remove("hidden");
 }
-function switchToRegister(){
-  $("#loginForm").classList.add("hidden"); $("#registerForm").classList.remove("hidden");
-  $("#toRegisterWrap").classList.add("hidden"); $("#toLoginWrap").classList.remove("hidden");
-  $("#authSubtitle").textContent="یه حساب جدید برای خودت بساز";
+function hideAllAuthScreens(){
+  $("#welcomeScreen").classList.add("hidden");
+  $("#loginScreen").classList.add("hidden");
+  $("#registerScreen").classList.add("hidden");
 }
-function switchToLogin(){
-  $("#registerForm").classList.add("hidden"); $("#loginForm").classList.remove("hidden");
-  $("#toLoginWrap").classList.add("hidden"); $("#toRegisterWrap").classList.remove("hidden");
-  $("#authSubtitle").textContent="برای ادامه وارد حساب کاربری‌ت شو";
-}
+function showWelcomeScreen(){ hideAllAuthScreens(); $("#welcomeScreen").classList.remove("hidden"); }
+function showLoginScreen(){ hideAllAuthScreens(); $("#loginScreen").classList.remove("hidden"); $("#loginError").textContent=""; }
+function showRegisterScreen(){ hideAllAuthScreens(); $("#registerScreen").classList.remove("hidden"); $("#registerError").textContent=""; }
 
 // ---- appearance -----------------------------------------------------------
 function applyAppearance(){
@@ -317,8 +316,22 @@ function wireAppEvents(){
 }
 
 function wireAuthEvents(){
-  $("#toRegister").onclick=switchToRegister;
-  $("#toLogin").onclick=switchToLogin;
+  $("#goLogin").onclick=showLoginScreen;
+  $("#goRegister").onclick=showRegisterScreen;
+  $("#backFromLogin").onclick=showWelcomeScreen;
+  $("#backFromRegister").onclick=showWelcomeScreen;
+  $("#toRegisterFromLogin").onclick=showRegisterScreen;
+  $("#toLoginFromRegister").onclick=showLoginScreen;
+
+  $("#guestBtn").onclick=async()=>{
+    $("#guestError").textContent="";
+    $("#guestBtn").disabled=true;
+    try{
+      const d=await api("/api/auth/guest",{method:"POST"});
+      state.user=d.user; hideAuthScreen(); await loadApp(); wireAppEvents();
+    }catch(err){ $("#guestError").textContent=err.message; }
+    finally{ $("#guestBtn").disabled=false; }
+  };
 
   $("#loginForm").addEventListener("submit", async e=>{
     e.preventDefault();

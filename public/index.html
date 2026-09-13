@@ -11,18 +11,40 @@
 
 <!-- AUTH SCREEN (shown when logged out) -->
 <div id="authScreen" class="auth-screen hidden">
-  <div class="auth-card reveal is-visible">
-    <div class="auth-brand"><div class="hero-avatar" id="authBrandAvatar">N</div><h1>Nova</h1></div>
-    <p class="auth-sub" id="authSubtitle">برای ادامه وارد حساب کاربری‌ت شو</p>
 
+  <!-- Screen 1: welcome — choose login, create account, or continue as guest -->
+  <div id="welcomeScreen" class="auth-card reveal is-visible">
+    <div class="auth-brand"><div class="hero-avatar">N</div><h1>Nova</h1></div>
+    <p class="auth-sub">به Nova خوش اومدی — دستیار هوش مصنوعی‌ت</p>
+    <div class="auth-actions">
+      <button type="button" id="goLogin" class="primary-btn">ورود</button>
+      <button type="button" id="goRegister" class="secondary-btn">اکانت ندارید؟ بسازید</button>
+      <button type="button" id="guestBtn" class="ghost-btn">ورود به عنوان مهمان</button>
+    </div>
+    <p class="auth-error" id="guestError"></p>
+  </div>
+
+  <!-- Screen 2: login -->
+  <div id="loginScreen" class="auth-card hidden">
+    <div class="auth-brand"><div class="hero-avatar">N</div><h1>ورود</h1></div>
+    <p class="auth-sub">برای ادامه وارد حساب کاربری‌ت شو</p>
     <form id="loginForm" class="auth-form">
       <label>نام کاربری<input id="loginUsername" autocomplete="username" required></label>
       <label>رمز عبور<input id="loginPassword" type="password" autocomplete="current-password" required></label>
       <p class="auth-error" id="loginError"></p>
       <button type="submit" class="primary-btn">ورود</button>
     </form>
+    <p class="auth-switch">
+      <button type="button" id="backFromLogin">بازگشت</button> ·
+      حساب نداری؟ <button type="button" id="toRegisterFromLogin">بساز</button>
+    </p>
+  </div>
 
-    <form id="registerForm" class="auth-form hidden">
+  <!-- Screen 3: create account (its own separate screen, not stacked under login) -->
+  <div id="registerScreen" class="auth-card hidden">
+    <div class="auth-brand"><div class="hero-avatar">N</div><h1>ساخت حساب</h1></div>
+    <p class="auth-sub">یه حساب جدید برای خودت بساز</p>
+    <form id="registerForm" class="auth-form">
       <label>نام کاربری<input id="regUsername" autocomplete="username" required></label>
       <label>رمز عبور<input id="regPassword" type="password" autocomplete="new-password" required></label>
       <p class="hint">حداقل ۸ کاراکتر، شامل حرف بزرگ، حرف کوچک، عدد و یک نویسه خاص.</p>
@@ -31,10 +53,9 @@
       <p class="auth-error" id="registerError"></p>
       <button type="submit" class="primary-btn">ساخت حساب</button>
     </form>
-
     <p class="auth-switch">
-      <span id="toRegisterWrap">حساب نداری؟ <button type="button" id="toRegister">بساز</button></span>
-      <span id="toLoginWrap" class="hidden">حساب داری؟ <button type="button" id="toLogin">وارد شو</button></span>
+      <button type="button" id="backFromRegister">بازگشت</button> ·
+      حساب داری؟ <button type="button" id="toLoginFromRegister">وارد شو</button>
     </p>
   </div>
 </div>

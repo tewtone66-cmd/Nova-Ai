@@ -280,6 +280,12 @@ button,.chat-item,.composer,.tool-btn,.round-btn,.send-btn,.icon-btn,.chip,.them
 .auth-error{color:var(--danger);font-size:12px;min-height:14px;margin:0}
 .auth-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
 .auth-switch button{background:none;color:var(--accent);font-weight:700;padding:0 3px}
+.auth-actions{display:grid;gap:10px;margin-top:6px}
+.secondary-btn{width:100%;padding:12px;border-radius:12px;background:var(--surface2);color:var(--text);font-weight:700;border:1px solid var(--border)}
+.secondary-btn:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.ghost-btn{width:100%;padding:11px;border-radius:12px;background:transparent;color:var(--muted);font-weight:600;font-size:13px}
+.ghost-btn:hover{color:var(--accent);background:var(--surface2)}
+.ghost-btn:disabled{opacity:.6;cursor:default}
 .logout-action{margin-top:8px;width:100%;text-align:center;color:var(--danger);background:transparent;padding:9px;border-radius:10px;font-size:12px}
 .logout-action:hover{background:color-mix(in srgb,var(--danger) 10%,transparent)}
 

@@ -6,7 +6,7 @@ import cookieSession from "cookie-session";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import {load, save, getUserData, findUserByUsername, findUserById} from "./store.js";
+import {load, save, getUserData, findUserByUsername, findUserById, restoreRemoteBackup} from "./store.js";
 import {hashPassword, verifyPassword, validateUsername, validatePassword, validateContact, publicUser} from "./auth.js";
 import {classify, streamResponse, generateImage, extractMemory, generateTitle, PERSONALITY_MODES} from "./openai.js";
 import {extractText} from "./files.js";
@@ -18,7 +18,7 @@ const uploadDir = path.resolve("uploads");
 fs.mkdirSync(uploadDir,{recursive:true});
 const maxMb = Number(process.env.MAX_UPLOAD_MB || 15);
 const upload = multer({dest:uploadDir, limits:{fileSize:maxMb*1024*1024}});
-let db = load();
+let db;
 const controllers = new Map();
 
 // Needed so Express knows the connection is HTTPS when running behind a
@@ -102,6 +102,37 @@ app.post("/api/auth/login", (req,res)=>{
 app.post("/api/auth/logout", (req,res)=>{
   req.session = null;
   res.json({ok:true});
+});
+
+// "Continue as guest": creates a throwaway account with a random numeric
+// username and a random password nobody ever sees or needs, then logs it
+// in immediately. Lets someone start chatting instantly with no login step
+// at all, and sidesteps the login form entirely for people who just want in.
+app.post("/api/auth/guest", (req,res)=>{
+  db = load();
+  let username;
+  do {
+    username = "guest" + Math.floor(100000 + Math.random()*900000);
+  } while (findUserByUsername(db, username));
+
+  const {salt, hash} = hashPassword(crypto.randomBytes(24).toString("hex"));
+  const user = {
+    id: id(),
+    username,
+    passwordSalt: salt,
+    passwordHash: hash,
+    email: "",
+    phone: "",
+    isGuest: true,
+    createdAt: Date.now()
+  };
+  db.users.push(user);
+  const u = getUserData(db, user.id);
+  u.settings.userName = "مهمان";
+  save(db);
+
+  req.session.userId = user.id;
+  res.json({ok:true, user: publicUser(user)});
 });
 
 app.get("/api/auth/me", (req,res)=>{
@@ -280,4 +311,8 @@ app.use((req,res)=>{
   res.sendFile(path.resolve("public/index.html"));
 });
 
-app.listen(port,()=>console.log(`Nova running at http://localhost:${port}`));
+(async () => {
+  await restoreRemoteBackup(); // no-op unless Upstash env vars are set
+  db = load();
+  app.listen(port,()=>console.log(`Nova running at http://localhost:${port}`));
+})();

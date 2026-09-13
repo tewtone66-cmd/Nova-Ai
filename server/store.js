@@ -63,6 +63,52 @@ export function save(db) {
   const tmp = dbFile + ".tmp";
   fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
   fs.renameSync(tmp, dbFile);
+  pushRemoteBackup(db);
+}
+
+// ---- optional remote backup (Upstash Redis REST) ------------------------
+//
+// Render's free plan (and most free/serverless hosts) wipes the local disk
+// every time the instance restarts or spins back up after being idle. Since
+// accounts live only in data/nova.json, that means every registered user
+// silently disappears — registering still works (same running process),
+// but a login attempt after the instance recycles fails because the server
+// genuinely has no memory of that account anymore.
+//
+// If UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are set (free tier
+// at https://upstash.com), every save() also mirrors the whole DB to Redis,
+// and restoreRemoteBackup() pulls it back down into the local file the
+// moment the server boots. With no Upstash env vars set, both functions are
+// complete no-ops and everything behaves exactly as it did before (pure
+// local file, fine for local development).
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REMOTE_KEY = "nova:db-backup";
+
+function pushRemoteBackup(db) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  fetch(`${UPSTASH_URL}/set/${REMOTE_KEY}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    body: JSON.stringify(db)
+  }).catch(e => console.error("Nova: remote backup failed:", e.message));
+}
+
+export async function restoreRemoteBackup() {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/get/${REMOTE_KEY}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+    });
+    const data = await res.json();
+    if (data?.result) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      fs.writeFileSync(dbFile, data.result);
+      console.log("Nova: restored account data from remote backup.");
+    }
+  } catch (e) {
+    console.error("Nova: could not restore remote backup (starting with local data instead):", e.message);
+  }
 }
 
 /** Get (creating if needed) the per-user workspace, with any missing fields backfilled. */
