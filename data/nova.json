@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "novaName": "Nova",
+    "novaBio": "هوش مصنوعی شخصی و خلاق شما",
+    "novaAvatar": "",
+    "userName": "کاربر",
+    "userBio": "",
+    "userAvatar": "",
+    "personality": "smart",
+    "customPrompt": "",
+    "theme": "green",
+    "customAccent": "#20a66a",
+    "mode": "light",
+    "novaEnabled": true,
+    "limit": 100
+  },
+  "conversations": [
+    {
+      "id": "629a7f80-705e-4807-ab0d-840085b6cae2",
+      "title": "گفت‌وگوی جدید",
+      "messages": [],
+      "updatedAt": 1789298021800
+    }
+  ],
+  "memories": []
+}
