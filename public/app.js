@@ -30,7 +30,8 @@ async function api(url,opt={}){
   const ct=r.headers.get("content-type")||"";
   if(!ct.includes("application/json")) throw new Error("Server returned non-JSON response");
   const d=await r.json();
-  if(r.status===401){ showAuthScreen(); throw new Error(d.error?.message||"لطفاً دوباره وارد شوید."); }
+  const isAuthCall=url.startsWith("/api/auth/");
+  if(r.status===401 && !isAuthCall){ showAuthScreen(); throw new Error(d.error?.message||"لطفاً دوباره وارد شوید."); }
   if(!r.ok||d.ok===false)throw new Error(d.error?.message||"Request failed");
   return d;
 }
