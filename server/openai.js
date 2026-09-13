@@ -1,38 +1,17 @@
 import OpenAI from "openai";
 
-let client;
+let openaiClient;
 
-function getClient() {
+function getOpenAI() {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not configured");
   }
-  client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return client;
-}
 
-export function modelFor(kind = "text", settings = {}) {
-  const selected = settings?.aiModels || {};
+  openaiClient ??= new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
 
-  if (kind === "coding") {
-    if (selected.coding === "openai") {
-      return process.env.OPENAI_CODING_MODEL || process.env.OPENAI_MODEL || "gpt-5-mini";
-    }
-  }
-
-  if (kind === "text" || kind === "chat") {
-    if (selected.chat === "openai") {
-      return process.env.OPENAI_MODEL || "gpt-5-mini";
-    }
-  }
-
-  return process.env.OPENAI_MODEL || "gpt-5-mini";
-}
-
-export function classify(text) {
-  const t = (text || "").toLowerCase();
-  if (/(generate|create|make|draw|image|photo|picture|عکس|تصویر|بساز|ساخت عکس|تصویر بساز)/i.test(t)) return "image";
-  if (/(code|coding|debug|bug|javascript|python|typescript|html|css|react|node|کد|برنامه نویسی|باگ|خطا)/i.test(t)) return "coding";
-  return "text";
+  return openaiClient;
 }
 
 export const PERSONALITY_MODES = [
@@ -44,29 +23,32 @@ export const PERSONALITY_MODES = [
 ];
 
 const PERSONALITY_TEXT = {
-  smart: "لحن: دقیق، تحلیلی و عمیق. قبل از پاسخ نهایی جوانب مختلف موضوع را در نظر بگیر و با جزئیات فنی درست و ساختاریافته پاسخ بده.",
-  casual: "لحن: خودمونی و رفیقانه. از زبان محاوره‌ای و روزمره فارسی استفاده کن، انگار داری با یه دوست حرف می‌زنی؛ رسمی و خشک صحبت نکن.",
-  sticker: "لحن: پرانرژی و بامزه. طبیعی و متناسب با محتوا از ایموجی استفاده کن، اما دقت پاسخ را فدای ایموجی نکن.",
-  serious: "لحن: رسمی، کوتاه و مستقیم. بدون شوخی و بدون ایموجی.",
-  research: "لحن: پژوهشی. موضوع را از چند زاویه بررسی کن و پاسخ را ساختاریافته ارائه بده."
+  smart: "لحن: دقیق، تحلیلی و عمیق.",
+  casual: "لحن: خودمونی و رفیقانه.",
+  sticker: "لحن: پرانرژی و بامزه.",
+  serious: "لحن: رسمی، کوتاه و مستقیم.",
+  research: "لحن: پژوهشی و ساختاریافته."
 };
 
-const BRAND_IDENTITY = `تو Nova هستی — یک دستیار هوش مصنوعی که توسط «تیم Nova AI» ساخته شده و متعلق به همان تیم است.
-هرگز نگو که ساخته‌ی مستقیم Google، OpenAI یا شرکت دیگری هستی و خودت را با نام مدل زیرین معرفی نکن.
-اگر کاربر درباره زیرساخت فنی یا مدل زبانی پرسید، صادقانه بگو Nova از فناوری مدل‌های هوش مصنوعی استفاده می‌کند و هویت و محصول Nova متعلق به تیم Nova AI است.`;
+const BRAND_IDENTITY = `
+تو Nova هستی؛ یک دستیار هوش مصنوعی ساخته‌شده توسط تیم Nova AI.
+هرگز ادعا نکن که خودت محصول مستقیم Google، OpenAI یا شرکت دیگری هستی.
+اگر درباره فناوری زیرین پرسیده شد، صادقانه توضیح بده که Nova از مدل‌ها و سرویس‌های هوش مصنوعی مختلف استفاده می‌کند.
+`;
 
-export function buildInstructions(settings = {}, kind) {
+function buildInstructions(settings = {}, kind = "text") {
   const personality =
-    PERSONALITY_TEXT[settings.personality] || PERSONALITY_TEXT.smart;
+    PERSONALITY_TEXT[settings.personality] ||
+    PERSONALITY_TEXT.smart;
 
   return [
     `You are ${settings.novaName || "Nova"}, a professional AI assistant.`,
     BRAND_IDENTITY,
     personality,
-    "Do not claim to have done actions you did not actually do.",
-    "Use Markdown when it improves readability. Put code in fenced code blocks.",
+    "Do not claim to have performed actions you did not actually perform.",
+    "Use Markdown when useful. Put code inside fenced code blocks.",
     kind === "coding"
-      ? "For coding tasks, explain important assumptions, provide complete code when requested, and carefully inspect likely errors."
+      ? "For coding tasks, provide accurate technical explanations and complete code when requested."
       : "",
     settings.customPrompt
       ? `دستورهای دائمی کاربر:\n${settings.customPrompt}`
@@ -75,52 +57,79 @@ export function buildInstructions(settings = {}, kind) {
       ? `Assistant profile: ${settings.novaBio}`
       : "",
     settings.userName
-      ? `User's name is ${settings.userName} — address them naturally.`
+      ? `User's name is ${settings.userName}.`
       : ""
   ].filter(Boolean).join("\n\n");
 }
 
+function getProvider(settings = {}, kind = "text") {
+  const models = settings.aiModels || {};
 
-function selectedProvider(settings = {}, kind = "text") {
-  const models = settings?.aiModels || {};
+  if (kind === "coding") {
+    return models.coding || "openai";
+  }
 
-  if (kind === "coding") return models.coding || "openai";
-  if (kind === "image") return models.image || "openai";
-  if (kind === "video") return models.video || "kling";
+  if (kind === "image") {
+    return models.image || "openai";
+  }
+
+  if (kind === "video") {
+    return models.video || "pixverse";
+  }
 
   return models.chat || "openai";
 }
 
-function providerConfig(provider) {
+function getProviderConfig(provider) {
   const configs = {
     openai: {
       key: process.env.OPENAI_API_KEY,
       baseURL: "https://api.openai.com/v1",
-      model: process.env.OPENAI_MODEL || "gpt-5-mini"
+      model: process.env.OPENAI_MODEL || "gpt-5.6-luna"
     },
-    groq: {
-      key: process.env.GROQ_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1",
-      model: process.env.GROQ_MODEL || "openai/gpt-oss-120b"
-    },
+
     gemini: {
       key: process.env.GEMINI_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      model: process.env.GEMINI_MODEL || "gemini-3.8-flash"
+      baseURL:
+        "https://generativelanguage.googleapis.com/v1beta/openai/",
+      model:
+        process.env.GEMINI_MODEL || "gemini-3.8-flash"
     },
-    claude: {
-      key: process.env.ANTHROPIC_API_KEY,
-      baseURL: "https://api.anthropic.com/v1",
-      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5"
-    },
+
     openrouter: {
       key: process.env.OPENROUTER_API_KEY,
       baseURL: "https://openrouter.ai/api/v1",
-      model: process.env.OPENROUTER_MODEL || "openai/gpt-5"
+      model:
+        process.env.OPENROUTER_MODEL || "openai/gpt-5"
     }
   };
 
   return configs[provider] || null;
+}
+
+export function classify(text) {
+  const t = String(text || "").toLowerCase();
+
+  if (
+    /(generate|create|make|draw|image|photo|picture|عکس|تصویر|بساز|ساخت عکس)/i.test(t)
+  ) {
+    return "image";
+  }
+
+  if (
+    /(code|coding|debug|bug|javascript|python|typescript|html|css|react|node|کد|برنامه نویسی|باگ|خطا)/i.test(t)
+  ) {
+    return "coding";
+  }
+
+  return "text";
+}
+
+export function modelFor(kind = "text", settings = {}) {
+  const provider = getProvider(settings, kind);
+  const config = getProviderConfig(provider);
+
+  return config?.model || process.env.OPENAI_MODEL || "gpt-5.6-luna";
 }
 
 export async function* streamResponse({
@@ -130,8 +139,8 @@ export async function* streamResponse({
   useWeb = false,
   signal
 }) {
-  const provider = selectedProvider(settings, kind);
-  const config = providerConfig(provider);
+  const provider = getProvider(settings, kind);
+  const config = getProviderConfig(provider);
 
   if (!config?.key) {
     throw new Error(`AI_PROVIDER_NOT_CONFIGURED:${provider}`);
@@ -142,41 +151,59 @@ export async function* streamResponse({
     baseURL: config.baseURL
   });
 
-  const input = messages.map(m => ({
-    role: m.role === "assistant" ? "assistant" : "user",
-    content: String(m.content || "")
+  const input = messages.map(message => ({
+    role:
+      message.role === "assistant"
+        ? "assistant"
+        : "user",
+    content: String(message.content || "")
   }));
 
   const response = await ai.responses.create({
-    model: provider === "openai"
-      ? modelFor(kind, settings)
-      : config.model,
+    model: config.model,
     instructions: buildInstructions(settings, kind),
     input,
-    tools: useWeb && provider === "openai"
-      ? [{ type: "web_search_preview" }]
-      : undefined,
+    tools:
+      useWeb && provider === "openai"
+        ? [{ type: "web_search_preview" }]
+        : undefined,
     stream: true
   });
 
   for await (const event of response) {
     if (event.type === "response.output_text.delta") {
-      yield { text: event.delta };
+      yield {
+        text: event.delta
+      };
     }
 
-    if (event.type === "response.completed" && event.response?.usage) {
-      yield { usageMetadata: event.response.usage };
+    if (
+      event.type === "response.completed" &&
+      event.response?.usage
+    ) {
+      yield {
+        usageMetadata: event.response.usage
+      };
     }
   }
 }
 
-export async function generateImage({ prompt, imageFile }) {
-  const ai = getClient();
+export async function generateImage({
+  prompt,
+  imageFile
+}) {
+  const ai = getOpenAI();
 
-  const input = [{ type: "input_text", text: prompt }];
+  const input = [];
+
+  input.push({
+    type: "input_text",
+    text: prompt
+  });
 
   if (imageFile) {
     const fs = await import("node:fs");
+
     const buffer = fs.readFileSync(imageFile);
 
     const mimeType =
@@ -187,90 +214,34 @@ export async function generateImage({ prompt, imageFile }) {
 
     input.push({
       type: "input_image",
-      image_url: `data:${mimeType};base64,${buffer.toString("base64")}`
+      image_url:
+        `data:${mimeType};base64,${buffer.toString("base64")}`
     });
   }
 
   return ai.images.generate({
-    model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
+    model:
+      process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
     prompt,
-    size: process.env.OPENAI_IMAGE_SIZE || "1024x1024"
+    size:
+      process.env.OPENAI_IMAGE_SIZE || "1024x1024"
   });
 }
 
-export async function extractMemory({
-  userText,
-  assistantText,
-  enabledCategories
-}) {
-  try {
-    const ai = getClient();
-
-    const categories = Object.entries(enabledCategories || {})
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-
-    if (!categories.length) return null;
-
-    const resp = await ai.responses.create({
-      model: modelFor("text"),
-      instructions: "فقط JSON خام برگردان و هیچ متن دیگری ننویس.",
-      input: `از این تبادل پیام، فقط اگر یک واقعیت پایدار و قابل استفاده در آینده درباره کاربر وجود دارد استخراج کن.
-
-دسته‌های مجاز: ${categories.join(", ")}
-
-فرمت:
-{"fact":"...یا null","category":"...یا null"}
-
-پیام کاربر:
-${userText}
-
-پاسخ دستیار:
-${(assistantText || "").slice(0, 500)}`,
-      max_output_tokens: 120
-    });
-
-    const cleaned = (resp.output_text || "")
-      .replace(/```json|```/g, "")
-      .trim();
-
-    const parsed = JSON.parse(cleaned);
-
-    if (
-      parsed?.fact &&
-      parsed.fact !== "null" &&
-      categories.includes(parsed.category)
-    ) {
-      return {
-        text: String(parsed.fact).slice(0, 300),
-        category: parsed.category
-      };
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
+export async function extractMemory() {
+  return null;
 }
 
-export async function generateTitle(firstUserMessage) {
-  try {
-    const ai = getClient();
+export async function generateTitle(text) {
+  const ai = getOpenAI();
 
-    const resp = await ai.responses.create({
-      model: modelFor("text"),
-      instructions:
-        "یک عنوان بسیار کوتاه حداکثر ۵ کلمه‌ای برای گفتگو بده. بدون نقل‌قول و نقطه.",
-      input: firstUserMessage,
-      max_output_tokens: 24
-    });
+  const response = await ai.responses.create({
+    model:
+      process.env.OPENAI_MODEL || "gpt-5.6-luna",
+    input: `برای این گفتگو یک عنوان خیلی کوتاه فارسی بساز:\n${text}`,
+    max_output_tokens: 30
+  });
 
-    const title = (resp.output_text || "")
-      .trim()
-      .replace(/^["'«]|["'»]$/g, "");
+  return response.output_text?.trim() || "گفتگوی جدید";
 
-    return title.slice(0, 48) || null;
-  } catch {
-    return null;
-  }
 }
