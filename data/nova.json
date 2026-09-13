@@ -1,0 +1,47 @@
+{
+  "users": [
+    {
+      "id": "6230bc65-2219-4c02-9fc1-037eb3f40042",
+      "username": "SenpaiZuto",
+      "passwordSalt": "ebf9508e2022f4e564a415d0a8720cfa",
+      "passwordHash": "32da4b35dbf7666ffe3c01194eb3ef9b37261e064ce52d6d65c11a8605cc6abbfe4ff5c15d2f27033cca8144350b589a405bc7fae8abccdabe0ac8bcaed503aa",
+      "email": "",
+      "phone": "",
+      "createdAt": 1789309941533
+    }
+  ],
+  "data": {
+    "6230bc65-2219-4c02-9fc1-037eb3f40042": {
+      "settings": {
+        "novaName": "Nova",
+        "novaBio": "دستیار هوش مصنوعی شما",
+        "novaAvatar": "",
+        "userName": "کاربر",
+        "userBio": "",
+        "userAvatar": "",
+        "personality": "smart",
+        "customPrompt": "",
+        "theme": "green",
+        "customAccent": "#20a66a",
+        "mode": "light",
+        "novaEnabled": true,
+        "memoryEnabled": true,
+        "memoryCategories": {
+          "personal": true,
+          "preferences": true,
+          "work": true,
+          "projects": true
+        },
+        "autoSpeak": false,
+        "voiceLang": "fa-IR",
+        "animationLevel": "normal"
+      },
+      "conversations": [],
+      "memories": [],
+      "usage": {
+        "periodStart": 1789309941534,
+        "tokensUsed": 0
+      }
+    }
+  }
+}
