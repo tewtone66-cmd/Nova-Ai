@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#20a66a">
+<title>Nova — AI Workspace</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- AUTH SCREEN (shown when logged out) -->
+<div id="authScreen" class="auth-screen hidden">
+  <div class="auth-card reveal is-visible">
+    <div class="auth-brand"><div class="hero-avatar" id="authBrandAvatar">N</div><h1>Nova</h1></div>
+    <p class="auth-sub" id="authSubtitle">برای ادامه وارد حساب کاربری‌ت شو</p>
+
+    <form id="loginForm" class="auth-form">
+      <label>نام کاربری<input id="loginUsername" autocomplete="username" required></label>
+      <label>رمز عبور<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+      <p class="auth-error" id="loginError"></p>
+      <button type="submit" class="primary-btn">ورود</button>
+    </form>
+
+    <form id="registerForm" class="auth-form hidden">
+      <label>نام کاربری<input id="regUsername" autocomplete="username" required></label>
+      <label>رمز عبور<input id="regPassword" type="password" autocomplete="new-password" required></label>
+      <p class="hint">حداقل ۸ کاراکتر، شامل حرف بزرگ، حرف کوچک، عدد و یک نویسه خاص.</p>
+      <label>ایمیل <span class="hint-inline">(اختیاری)</span><input id="regEmail" type="email"></label>
+      <label>شماره تلفن <span class="hint-inline">(اختیاری)</span><input id="regPhone" type="tel"></label>
+      <p class="auth-error" id="registerError"></p>
+      <button type="submit" class="primary-btn">ساخت حساب</button>
+    </form>
+
+    <p class="auth-switch">
+      <span id="toRegisterWrap">حساب نداری؟ <button type="button" id="toRegister">بساز</button></span>
+      <span id="toLoginWrap" class="hidden">حساب داری؟ <button type="button" id="toLogin">وارد شو</button></span>
+    </p>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <aside id="sidebar" class="sidebar">
+    <div class="side-top">
+      <button id="closeSide" class="icon-btn mobile-only" aria-label="بستن">×</button>
+      <div class="brand-mini">
+        <div id="brandAvatar" class="avatar nova-avatar">N</div>
+        <div><b id="brandName">Nova</b><span>AI Workspace</span></div>
+      </div>
+      <button id="newChat" class="new-chat">＋ گفت‌وگوی جدید</button>
+      <label class="search-box"><span>⌕</span><input id="chatSearch" placeholder="جستجوی گفتگوها..."></label>
+    </div>
+    <div id="chatList" class="chat-list"></div>
+    <div class="side-bottom">
+      <button id="openSettings" class="side-action">⚙️ تنظیمات</button>
+      <div class="profile-mini">
+        <div id="userAvatar" class="avatar user-avatar">U</div>
+        <div><b id="userName">کاربر</b><span>پروفایل</span></div>
+        <button id="profileShortcut" class="dots">•••</button>
+      </div>
+      <button id="logoutBtn" class="side-action logout-action">خروج از حساب</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button id="openSide" class="icon-btn menu-btn">☰</button>
+      <div class="mobile-brand"><div id="mobileAvatar" class="avatar nova-avatar">N</div><b id="mobileName">Nova</b></div>
+      <div class="topbar-spacer"></div>
+      <div class="nova-status"><i></i><span id="statusText">Nova ON</span></div>
+      <button id="settingsBtn" class="icon-btn">⚙</button>
+    </header>
+
+    <div class="limit-row" title="اعتبار واقعی روزانه — بر اساس مصرف واقعی توکن محاسبه می‌شود">
+      <span class="bolt">⚡</span><strong id="limitText">100%</strong>
+      <div class="linear-limit"><div id="limitFill"></div></div>
+      <span class="limit-detail" id="limitDetail"></span>
+    </div>
+
+    <section id="chatView" class="chat-view">
+      <div id="welcome" class="welcome">
+        <div id="heroAvatar" class="hero-avatar">N</div>
+        <div class="eyebrow">PERSONAL AI WORKSPACE</div>
+        <h1>سلام 👋 من <span id="heroName">Nova</span> هستم</h1>
+        <p>امروز دوست داری چیکار کنیم؟</p>
+        <div class="quick-grid">
+          <button data-action="chat"><span>💬</span><b>گفت‌وگو</b><small>سؤال بپرس و ایده بگیر</small></button>
+          <button data-action="image"><span>✦</span><b>ساخت تصویر</b><small>ایده‌ات را به تصویر تبدیل کن</small></button>
+          <button data-action="coding"><span>&lt;/&gt;</span><b>کدنویسی</b><small>ساخت، رفع باگ و توضیح کد</small></button>
+          <button data-action="ideas"><span>✧</span><b>ایده‌پردازی</b><small>ایده‌های تازه و کاربردی</small></button>
+          <button data-action="file"><span>⌑</span><b>آپلود فایل</b><small>فایل را بررسی و تحلیل کن</small></button>
+          <button data-action="web"><span>◎</span><b>جست‌وجوی وب</b><small>اطلاعات تازه را بررسی کن</small></button>
+        </div>
+      </div>
+      <div id="messages" class="messages"></div>
+    </section>
+
+    <section id="composerWrap" class="composer-wrap">
+      <div id="attachmentBar" class="attachment-bar"></div>
+      <div class="composer">
+        <button id="attachBtn" class="round-btn" title="آپلود فایل">＋</button>
+        <button id="micBtn" class="round-btn" title="ورودی صوتی">🎤</button>
+        <textarea id="composer" rows="1" placeholder="پیامت را برای Nova بنویس..."></textarea>
+        <div class="composer-tools">
+          <button id="webBtn" class="tool-btn" title="جستجوی وب">◎</button>
+          <button id="imageBtn" class="tool-btn" title="ساخت تصویر">✦</button>
+          <button id="sendBtn" class="send-btn" title="ارسال">➤</button>
+        </div>
+      </div>
+      <div class="composer-note">Enter ارسال • Shift + Enter خط جدید</div>
+    </section>
+  </main>
+</div>
+
+<div id="settingsOverlay" class="overlay hidden">
+  <section class="settings-panel">
+    <header class="settings-head"><div><small>PERSONALIZATION</small><h2>تنظیمات Nova</h2></div><button id="closeSettings" class="icon-btn">×</button></header>
+    <div class="settings-scroll">
+
+      <div class="settings-section">
+        <h3>🤖 هویت Nova</h3>
+        <div class="profile-editor">
+          <div class="avatar-editor"><div id="novaPreview" class="big-avatar">N</div><label class="upload-avatar">تغییر عکس<input id="novaAvatarInput" type="file" accept="image/*"></label></div>
+          <div class="fields"><label>نام Nova<input id="novaName"></label><label>توضیح<input id="novaBio"></label></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>👤 پروفایل شما</h3>
+        <div class="profile-editor">
+          <div class="avatar-editor"><div id="userPreview" class="big-avatar user-big">U</div><label class="upload-avatar">تغییر عکس<input id="userAvatarInput" type="file" accept="image/*"></label></div>
+          <div class="fields"><label>نام<input id="userNameInput"></label><label>Bio<input id="userBio"></label></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🎚️ حالت Nova</h3>
+        <p class="hint">مثل صدای گوشی، نوار رو بکش تا شخصیت Nova عوض بشه.</p>
+        <div class="mood-slider-wrap">
+          <input id="moodSlider" type="range" min="0" max="4" step="1" value="0">
+          <div class="mood-labels">
+            <span data-i="0">باهوش</span>
+            <span data-i="1">خودمونی</span>
+            <span data-i="2">با استیکر</span>
+            <span data-i="3">جدی</span>
+            <span data-i="4">تحقیق کردن</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📝 Custom Prompt</h3>
+        <p class="hint">دستورهای دائمی خودت را بنویس؛ Nova همیشه قبل از پاسخ آن را می‌خواند و رعایت می‌کند.</p>
+        <textarea id="customPrompt" class="large-input" placeholder="مثلاً: همیشه فارسی جواب بده، پاسخ‌ها را کوتاه و دقیق بنویس..."></textarea>
+      </div>
+
+      <div class="settings-section">
+        <h3>🎨 Theme</h3>
+        <div id="themeGrid" class="theme-grid"></div>
+        <div class="custom-color"><label>رنگ سفارشی</label><input id="customAccent" type="color"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>☀️ حالت نمایش</h3>
+        <div class="segmented"><button data-mode="light">روشن</button><button data-mode="dark">تاریک</button></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🎬 انیمیشن</h3>
+        <p class="hint">شدت جلوه‌های حرکتی رابط کاربری را خودت تنظیم کن.</p>
+        <div class="segmented" id="animSegmented">
+          <button data-anim="off">خاموش</button>
+          <button data-anim="reduced">کم</button>
+          <button data-anim="normal">معمولی</button>
+          <button data-anim="extra">زیاد</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🔊 صدا</h3>
+        <div class="nova-toggle-section">
+          <div><p class="hint" style="margin:0">Nova پاسخ‌هایش را با صدا هم بخواند</p></div>
+          <button id="autoSpeakToggle" class="toggle"></button>
+        </div>
+      </div>
+
+      <div class="settings-section nova-toggle-section">
+        <div><h3>⚡ Nova</h3><p class="hint">وقتی خاموش باشد هیچ درخواست AI ارسال نمی‌شود.</p></div>
+        <button id="novaToggle" class="toggle"></button>
+      </div>
+
+      <div class="settings-section">
+        <h3>🧠 Memory</h3>
+        <div class="nova-toggle-section" style="margin-bottom:12px">
+          <div><p class="hint" style="margin:0">ذخیره‌ی خودکار نکات مهم از گفتگوها</p></div>
+          <button id="memoryEnabledToggle" class="toggle"></button>
+        </div>
+        <div class="chips" id="memoryCategoryChips"></div>
+        <div id="memoryList" class="memory-list" style="margin-top:12px"></div>
+        <button id="clearMemory" class="ghost-danger-btn">پاک کردن کل حافظه</button>
+      </div>
+
+    </div>
+    <footer class="settings-footer"><button id="saveSettings" class="primary-btn">ذخیره تنظیمات</button></footer>
+  </section>
+</div>
+
+<input id="fileInput" type="file" hidden multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt,.csv,.md,.json,.js,.ts,.jsx,.tsx,.py,.html,.css">
+<div id="toast" class="toast"></div>
+<script src="/app.js"></script>
+</body>
+</html>
