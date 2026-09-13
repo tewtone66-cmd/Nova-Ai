@@ -159,12 +159,46 @@ export async function* streamResponse({
     content: String(message.content || "")
   }));
 
+  if (provider === "gemini" || provider === "openrouter") {
+    const messagesWithSystem = [
+      {
+        role: "system",
+        content: buildInstructions(settings, kind)
+      },
+      ...input
+    ];
+
+    const response = await ai.chat.completions.create({
+      model: config.model,
+      messages: messagesWithSystem,
+      stream: true,
+      stream_options: {
+        include_usage: true
+      }
+    });
+
+    for await (const chunk of response) {
+      const text = chunk.choices?.[0]?.delta?.content;
+      if (text) {
+        yield { text };
+      }
+
+      if (chunk.usage) {
+        yield {
+          usageMetadata: chunk.usage
+        };
+      }
+    }
+
+    return;
+  }
+
   const response = await ai.responses.create({
     model: config.model,
     instructions: buildInstructions(settings, kind),
     input,
     tools:
-      useWeb && provider === "openai"
+      useWeb
         ? [{ type: "web_search_preview" }]
         : undefined,
     stream: true
