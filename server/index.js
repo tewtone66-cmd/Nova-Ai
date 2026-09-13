@@ -45,6 +45,15 @@ function jsonError(res, status, message, code="ERROR") {
 }
 function id(){ return crypto.randomUUID(); }
 
+// Log every auth attempt to the server console — on Render this shows up
+// in the "Logs" tab, and is the fastest way to tell "request never reached
+// the server" (stale deploy / wrong URL) apart from "request reached the
+// server but failed" (bad credentials, missing env var, etc).
+app.use("/api/auth", (req,res,next)=>{
+  console.log(`Nova auth: ${req.method} ${req.path} from ${req.ip}`);
+  next();
+});
+
 // ---- auth --------------------------------------------------------------
 
 function requireAuth(req, res, next) {
@@ -313,6 +322,20 @@ app.use((req,res)=>{
   if(req.path.startsWith("/api/")) return jsonError(res,404,"API route not found","NOT_FOUND");
   res.set("Cache-Control","no-store");
   res.sendFile(path.resolve("public/index.html"));
+});
+
+// Catch-all error handler. Without this, an unexpected throw anywhere in a
+// route (e.g. a missing env var, a bad write to disk) makes Express send its
+// default HTML error page. The frontend's api() helper only understands
+// JSON, so that HTML page turned into an opaque "Server returned non-JSON
+// response" — and worse, if it happened after hideAuthScreen() ran, the
+// message was written to an already-hidden element and never seen at all.
+// This guarantees every failure is real JSON with a real message, always
+// logged here so it's visible in Render's Logs tab too.
+app.use((err, req, res, next) => {
+  console.error("Nova: unhandled error on", req.method, req.path, "-", err);
+  if (res.headersSent) return next(err);
+  jsonError(res, 500, "خطای داخلی سرور رخ داد. لاگ‌های سرور را در Render بررسی کن.", "INTERNAL_ERROR");
 });
 
 (async () => {

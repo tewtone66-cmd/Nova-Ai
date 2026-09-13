@@ -316,6 +316,24 @@ function wireAppEvents(){
   $("#logoutBtn").onclick=async()=>{ await api("/api/auth/logout",{method:"POST"}).catch(()=>{}); state.user=null; location.reload(); };
 }
 
+// Runs after a successful register/login/guest response. Loads the app data
+// FIRST, while still on the (visible) auth screen, and only switches screens
+// once that has actually succeeded. This matters: if we hid the auth screen
+// immediately and loadApp() then failed, the error message used to get
+// written into an element that was already hidden — so the failure was
+// completely invisible to the user (looked like "nothing happens").
+async function completeAuth(user, errorEl){
+  state.user = user;
+  try{
+    await loadApp();
+    hideAuthScreen();
+    wireAppEvents();
+  }catch(err){
+    console.error("Nova: logged in but failed to load app data:", err);
+    errorEl.textContent = "وارد شدی ولی بارگذاری اطلاعات حساب با خطا مواجه شد: " + err.message;
+  }
+}
+
 function wireAuthEvents(){
   $("#goLogin").onclick=showLoginScreen;
   $("#goRegister").onclick=showRegisterScreen;
@@ -329,32 +347,52 @@ function wireAuthEvents(){
     $("#guestBtn").disabled=true;
     try{
       const d=await api("/api/auth/guest",{method:"POST"});
-      state.user=d.user; hideAuthScreen(); await loadApp(); wireAppEvents();
-    }catch(err){ $("#guestError").textContent=err.message; }
+      await completeAuth(d.user, $("#guestError"));
+    }catch(err){ console.error("Nova: guest login failed:", err); $("#guestError").textContent=err.message; }
     finally{ $("#guestBtn").disabled=false; }
   };
 
   $("#loginForm").addEventListener("submit", async e=>{
     e.preventDefault();
     $("#loginError").textContent="";
+    const btn=$("#loginForm").querySelector("button[type=submit]");
+    btn.disabled=true;
     try{
       const d=await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:$("#loginUsername").value.trim(),password:$("#loginPassword").value})});
-      state.user=d.user; hideAuthScreen(); await loadApp(); wireAppEvents();
-    }catch(err){ $("#loginError").textContent=err.message; }
+      await completeAuth(d.user, $("#loginError"));
+    }catch(err){ console.error("Nova: login failed:", err); $("#loginError").textContent=err.message; }
+    finally{ btn.disabled=false; }
   });
 
   $("#registerForm").addEventListener("submit", async e=>{
     e.preventDefault();
     $("#registerError").textContent="";
+    const btn=$("#registerForm").querySelector("button[type=submit]");
+    btn.disabled=true;
     try{
       const d=await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
         username:$("#regUsername").value.trim(), password:$("#regPassword").value,
         email:$("#regEmail").value.trim(), phone:$("#regPhone").value.trim()
       })});
-      state.user=d.user; hideAuthScreen(); await loadApp(); wireAppEvents();
-    }catch(err){ $("#registerError").textContent=err.message; }
+      await completeAuth(d.user, $("#registerError"));
+    }catch(err){ console.error("Nova: register failed:", err); $("#registerError").textContent=err.message; }
+    finally{ btn.disabled=false; }
   });
 }
+
+// Global safety net: if ANY unexpected JS error or rejected promise slips
+// through (anywhere in the app, not just auth), surface it as a toast and
+// log it to the console instead of silently doing nothing. This is what
+// "nothing happens, no error" almost always really means — an error IS
+// happening, it's just not being shown anywhere.
+window.addEventListener("error", e=>{
+  console.error("Nova: uncaught error:", e.error||e.message);
+  toast("خطای غیرمنتظره: "+(e.error?.message||e.message||"جزئیات در Console"));
+});
+window.addEventListener("unhandledrejection", e=>{
+  console.error("Nova: unhandled promise rejection:", e.reason);
+  toast("خطای غیرمنتظره: "+(e.reason?.message||String(e.reason)||"جزئیات در Console"));
+});
 
 async function init(){
   setupVoiceInput();
