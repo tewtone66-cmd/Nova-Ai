@@ -89,7 +89,7 @@ export async function generateImage({prompt, imageFile, size="1024x1024"}) {
   }
 
   const response = await ai.models.generateContent({
-    model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.6-flash-image",
+    model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image",
     contents: [{role: "user", parts}],
     config: {
       responseModalities: ["TEXT", "IMAGE"]
