@@ -45,6 +45,19 @@ function jsonError(res, status, message, code="ERROR") {
 }
 function id(){ return crypto.randomUUID(); }
 
+// Log every /api request with its outcome (status code + whether a
+// session cookie/user was attached). This is the key diagnostic: it tells
+// us whether a request succeeded (2xx), was rejected (401/400), or crashed
+// (500) — the previous auth-only logger couldn't show that.
+app.use("/api", (req,res,next)=>{
+  const started=Date.now();
+  res.on("finish", ()=>{
+    const hasSession = Boolean(req.session && req.session.userId);
+    console.log(`Nova api: ${req.method} ${req.path} -> ${res.statusCode} (${Date.now()-started}ms, session:${hasSession})`);
+  });
+  next();
+});
+
 // Log every auth attempt to the server console — on Render this shows up
 // in the "Logs" tab, and is the fastest way to tell "request never reached
 // the server" (stale deploy / wrong URL) apart from "request reached the
