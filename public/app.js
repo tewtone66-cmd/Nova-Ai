@@ -282,8 +282,18 @@ function stopRecording(){
   try{recognizer?.stop()}catch{}
 }
 
+// Scroll-triggered fade-in only makes sense for elements that live inside
+// #chatView, since that's the only element the IntersectionObserver watches
+// (see setupRevealObserver: root is #chatView). The sidebar and topbar/
+// limit-row are NOT descendants of #chatView — they're persistent chrome
+// that's visible from the first frame. Giving them the "reveal" class used
+// to start them at opacity:0 and wait for an intersection that could never
+// be detected (a target outside the observer's root never intersects), so
+// after loadApp() ran, the topbar buttons and the limit bar silently faded
+// out and stayed invisible forever. They never needed a reveal animation in
+// the first place — they should just be visible immediately.
 function initRevealAnimations(){
-  $$(".welcome > *,.quick-grid button,.side-top > *, .side-bottom > *, .topbar > *, .limit-row > *").forEach((el,i)=>{
+  $$(".welcome > *,.quick-grid button").forEach((el,i)=>{
     el.classList.add("reveal");
     el.style.setProperty("--reveal-delay",`${Math.min(i,8)*55}ms`);
   });
