@@ -180,7 +180,7 @@ app.get("/api/state",(req,res)=>{
 
 app.put("/api/settings",(req,res)=>{
   const u = getUserData(db, req.user.id);
-  const allowed=["novaName","novaBio","novaAvatar","userName","userBio","userAvatar","personality","customPrompt","theme","customAccent","mode","novaEnabled","memoryEnabled","memoryCategories","autoSpeak","voiceLang","animationLevel"];
+  const allowed=["novaName","novaBio","novaAvatar","userName","userBio","userAvatar","personality","customPrompt","theme","customAccent","mode","novaEnabled","memoryEnabled","memoryCategories","autoSpeak","voiceLang","animationLevel","aiModels"];
   const next={...u.settings};
   for(const k of allowed) if(req.body[k] !== undefined) next[k]=req.body[k];
   if (next.personality && !PERSONALITY_MODES.includes(next.personality)) next.personality = u.settings.personality;
@@ -287,7 +287,22 @@ app.post("/api/chat", async (req,res)=>{
     res.write(`data:${JSON.stringify({type:"done",requestId,limit:usageAfter.percent,usage:usageAfter})}\n\n`);
   } catch(e) {
     const aborted=controller.signal.aborted;
-    res.write(`data:${JSON.stringify({type:aborted?"stopped":"error",message:aborted?"Generation stopped":(e.message||"Gemini request failed")})}\n\n`);
+    const raw = String(e?.message || "");
+    const isLimit =
+      e?.status === 429 ||
+      /429|rate.?limit|quota|insufficient.?quota|too.?many.?requests|limit.?reached/i.test(raw);
+
+    if (isLimit) {
+      res.write(`data:${JSON.stringify({
+        type:"model_limit",
+        message:"مدل هوش مصنوعی شما به محدودیت رسیده است.\\n\\nلطفاً از مسیر Settings → Model AI یک مدل دیگر انتخاب کنید."
+      })}\\n\\n`);
+    } else {
+      res.write(`data:${JSON.stringify({
+        type:aborted ? "stopped" : "error",
+        message:aborted ? "Generation stopped" : "خطایی در ارتباط با مدل هوش مصنوعی رخ داد."
+      })}\\n\\n`);
+    }
   } finally {
     controllers.delete(requestId);
     res.end();

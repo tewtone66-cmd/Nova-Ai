@@ -165,7 +165,11 @@ async function send(textOverride){
   const userMsg={role:"user",content:text};state.current.messages.push(userMsg);renderMessages();input.value="";resizeComposer();
   state.generating=true;$("#sendBtn").textContent="■";$("#sendBtn").title="توقف تولید";
   const assistant={role:"assistant",content:""};state.current.messages.push(assistant);renderMessages();
-  const kind=/\b(code|coding|debug|python|javascript|typescript|html|css)\b|کد|برنامه‌نویسی|باگ|خطا/i.test(text)?"coding":/عکس|تصویر|image|photo|picture|بساز/i.test(text)?"image":"text";
+  const kind =
+    state.aiMode === "coding" ? "coding" :
+    state.aiMode === "image" ? "image" :
+    state.aiMode === "video" ? "video" :
+    "text";
   if(kind==="image"){state.current.messages.pop();renderMessages();await generateImage(text);state.generating=false;$("#sendBtn").textContent="➤";return;}
   try{
     const r=await fetch("/api/chat",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:state.current.messages.slice(0,-1),kind,useWeb:state.web})});
@@ -174,7 +178,19 @@ async function send(textOverride){
     if(!r.ok){let j=await r.json().catch(()=>null);throw new Error(j?.error?.message||"خطا در اتصال");}
     const reader=r.body.getReader(),dec=new TextDecoder();let buf="";
     while(true){const {done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split("\n\n");buf=parts.pop()||"";
-      for(const p of parts){if(!p.startsWith("data:"))continue;const d=JSON.parse(p.slice(5));if(d.requestId)state.requestId=d.requestId;if(d.type==="delta"){assistant.content+=d.delta;renderMessages(false)}else if(d.type==="done"){state.usage=d.usage;updateLimit()}else if(d.type==="error"){throw new Error(d.message)}}
+      for(const p of parts){if(!p.startsWith("data:"))continue;const d=JSON.parse(p.slice(5));if(d.requestId)state.requestId=d.requestId;if(d.type==="delta"){
+  assistant.content+=d.delta;
+  renderMessages(false);
+}else if(d.type==="done"){
+  state.usage=d.usage;
+  updateLimit();
+}else if(d.type==="model_limit"){
+  assistant.content=d.message;
+  renderMessages();
+  break;
+}else if(d.type==="error"){
+  throw new Error(d.message);
+}}
     }
     await saveCurrent();
     if(state.settings.autoSpeak) speak(assistant.content);
@@ -201,6 +217,70 @@ async function generateImage(prompt){
     state.current.messages.push({role:"assistant",content:"![generated-image](data:image/png;base64,"+d.b64+")"});
     renderMessages();await saveCurrent();
   }catch(e){toast(e.message);state.current.messages.push({role:"assistant",content:"⚠️ "+e.message});renderMessages()}
+}
+
+
+// ---- AI modes ---------------------------------------------------------------
+state.aiMode = "chat";
+
+state.settings = state.settings || {};
+state.settings.aiModels = state.settings.aiModels || {
+  chat: "openai",
+  coding: "openai",
+  image: "openai",
+  video: "kling"
+};
+
+function loadAIModels(){
+  const m = state.settings.aiModels || {};
+  if ($("#chatModel")) $("#chatModel").value = m.chat || "openai";
+  if ($("#codingModel")) $("#codingModel").value = m.coding || "openai";
+  if ($("#imageModel")) $("#imageModel").value = m.image || "openai";
+  if ($("#videoModel")) $("#videoModel").value = m.video || "kling";
+}
+
+function readAIModels(){
+  state.settings.aiModels = {
+    chat: $("#chatModel")?.value || "openai",
+    coding: $("#codingModel")?.value || "openai",
+    image: $("#imageModel")?.value || "openai",
+    video: $("#videoModel")?.value || "kling"
+  };
+}
+
+function initAIModelSettings(){
+  loadAIModels();
+
+  ["chatModel","codingModel","imageModel","videoModel"].forEach(id=>{
+    const el = $("#" + id);
+    if(el) el.onchange = readAIModels;
+  });
+}
+
+
+function setAIMode(mode){
+  state.aiMode = mode;
+
+  $$(".ai-mode-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.aiMode === mode);
+  });
+
+  const placeholders = {
+    chat: "پیامت را برای Nova بنویس...",
+    coding: "کدی که می‌خواهی با Nova بنویسی...",
+    image: "توضیح تصویری که می‌خواهی بسازی...",
+    video: "توضیح ویدیویی که می‌خواهی بسازی..."
+  };
+
+  $("#composer").placeholder = placeholders[mode] || placeholders.chat;
+}
+
+function initAIModes(){
+  $$(".ai-mode-btn").forEach(btn=>{
+    btn.onclick=()=>setAIMode(btn.dataset.aiMode);
+  });
+
+  setAIMode(state.aiMode);
 }
 
 // ---- settings ---------------------------------------------------------------
@@ -242,6 +322,7 @@ function renderMemoryList(){
 }
 async function saveSettings(){
   state.settings.novaName=$("#novaName").value.trim()||"Nova";state.settings.novaBio=$("#novaBio").value;state.settings.userName=$("#userNameInput").value.trim()||"کاربر";state.settings.userBio=$("#userBio").value;state.settings.customPrompt=$("#customPrompt").value;state.settings.customAccent=$("#customAccent").value;
+  readAIModels();
   state.settings.personality=state.personalityModes[Number($("#moodSlider").value)]||"smart";
   const d=await api("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(state.settings)});state.settings=d.settings;applyAppearance();$("#settingsOverlay").classList.add("hidden");toast("تنظیمات ذخیره شد")}
 function fileToData(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
@@ -413,4 +494,7 @@ async function init(){
     else { showAuthScreen(); }
   }catch{ showAuthScreen(); }
 }
+initAIModes();
+initAIModelSettings();
+
 init().catch(e=>toast(e.message));

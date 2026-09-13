@@ -117,19 +117,33 @@
     </section>
 
     <section id="composerWrap" class="composer-wrap">
-      <div id="attachmentBar" class="attachment-bar"></div>
-      <div class="composer">
-        <button id="attachBtn" class="round-btn" title="آپلود فایل">＋</button>
-        <button id="micBtn" class="round-btn" title="ورودی صوتی">🎤</button>
-        <textarea id="composer" rows="1" placeholder="پیامت را برای Nova بنویس..."></textarea>
-        <div class="composer-tools">
-          <button id="webBtn" class="tool-btn" title="جستجوی وب">◎</button>
-          <button id="imageBtn" class="tool-btn" title="ساخت تصویر">✦</button>
-          <button id="sendBtn" class="send-btn" title="ارسال">➤</button>
-        </div>
+  <div id="attachmentBar" class="attachment-bar"></div>
+
+  <div class="composer">
+    <div class="ai-mode-picker">
+      <button id="aiModePickerBtn" class="ai-mode-picker-btn" type="button">
+        🤖 <span id="aiModeLabel">ChatBot</span> <span>⌄</span>
+      </button>
+
+      <div id="aiModeMenu" class="ai-mode-menu">
+        <button type="button" data-ai-mode="chat">🤖 ChatBot</button>
+        <button type="button" data-ai-mode="coding">💻 Codex</button>
+        <button type="button" data-ai-mode="image">🎨 Image Creator</button>
+        <button type="button" data-ai-mode="video">🎬 Video</button>
       </div>
-      <div class="composer-note">Enter ارسال • Shift + Enter خط جدید</div>
-    </section>
+    </div>
+    <button id="attachBtn" class="round-btn" title="آپلود فایل">＋</button>
+    <button id="micBtn" class="round-btn" title="ورودی صوتی">🎤</button>
+    <textarea id="composer" rows="1" placeholder="پیامت را برای Nova بنوی..."></textarea>
+    <div class="composer-tools">
+      <button id="webBtn" class="tool-btn" title="جستجوی وب">◎</button>
+      <button id="imageBtn" class="tool-btn" title="ساخت تصویر">✦</button>
+      <button id="sendBtn" class="send-btn" title="ارسال">➤</button>
+    </div>
+  </div>
+
+  <div class="composer-note">Enter ارسال • Shift + Enter خط جدید</div>
+</section>
   </main>
 </div>
 
@@ -175,7 +189,54 @@
         <textarea id="customPrompt" class="large-input" placeholder="مثلاً: همیشه فارسی جواب بده، پاسخ‌ها را کوتاه و دقیق بنویس..."></textarea>
       </div>
 
-      <div class="settings-section">
+      
+<div class="settings-section" id="modelAISection">
+  <h3>🧠 Model AI</h3>
+  <p class="hint">برای هر قابلیت، مدل هوش مصنوعی موردنظر خودت را انتخاب کن.</p>
+
+  <div class="model-ai-grid">
+    <label>
+      🤖 ChatBot
+      <select id="chatModel">
+        <option value="openai">ChatGPT</option>
+        <option value="gemini">Gemini</option>
+        <option value="claude">Claude</option>
+        <option value="groq">Groq</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+    </label>
+
+    <label>
+      💻 Codex
+      <select id="codingModel">
+        <option value="openai">GPT Codex</option>
+        <option value="claude">Claude Code</option>
+        <option value="qwen">Qwen</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+    </label>
+
+    <label>
+      🎨 Image Creator
+      <select id="imageModel">
+        <option value="openai">GPT Image</option>
+        <option value="gemini">Nano Banana</option>
+        <option value="leonardo">Leonardo</option>
+      </select>
+    </label>
+
+    <label>
+      🎬 Video
+      <select id="videoModel">
+        <option value="kling">Kling</option>
+        <option value="pixverse">PixVerse</option>
+        <option value="runway">Runway</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="settings-section">
         <h3>🎨 Theme</h3>
         <div id="themeGrid" class="theme-grid"></div>
         <div class="custom-color"><label>رنگ سفارشی</label><input id="customAccent" type="color"></div>

@@ -339,3 +339,264 @@ body.anim-extra .send-btn:hover{transform:translateY(-3px) scale(1.05)}
 @media(max-width:480px){
   .auth-card{padding:26px 18px;border-radius:18px}
 }
+
+
+.ai-mode-bar{
+  max-width:900px;
+  margin:0 auto 7px;
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+
+.ai-mode-bar::-webkit-scrollbar{
+  display:none;
+}
+
+.ai-mode-btn{
+  flex:0 0 auto;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--muted);
+  padding:7px 11px;
+  border-radius:11px;
+  font-size:11px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.ai-mode-btn:hover{
+  color:var(--accent);
+  border-color:var(--accent);
+}
+
+.ai-mode-btn.active{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+
+@media(max-width:600px){
+  .ai-mode-bar{
+    margin-bottom:5px;
+    padding:0 2px;
+  }
+
+  .ai-mode-btn{
+    padding:6px 9px;
+    font-size:10px;
+  }
+}
+
+.model-ai-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.model-ai-grid label{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.model-ai-grid select{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2);
+  color:var(--text);
+  outline:none;
+}
+
+.model-ai-grid select:focus{
+  border-color:var(--accent);
+}
+
+@media(max-width:600px){
+  .model-ai-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.model-ai-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.model-ai-grid label{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.model-ai-grid select{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2);
+  color:var(--text);
+  outline:none;
+}
+
+.model-ai-grid select:focus{
+  border-color:var(--accent);
+}
+
+@media(max-width:600px){
+  .model-ai-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.ai-mode-picker{
+  position:relative;
+  flex:0 0 auto;
+  align-self:flex-end;
+}
+
+.ai-mode-picker-btn{
+  height:38px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--surface2);
+  color:var(--text);
+  font-size:11px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+
+.ai-mode-picker-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+.ai-mode-menu{
+  display:none;
+  position:absolute;
+  bottom:46px;
+  left:0;
+  min-width:165px;
+  padding:5px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  z-index:50;
+}
+
+.ai-mode-menu.open{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.ai-mode-menu button{
+  width:100%;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.ai-mode-menu button:hover,
+.ai-mode-menu button.active{
+  background:var(--surface2);
+  color:var(--accent);
+}
+
+@media(max-width:600px){
+  .ai-mode-picker-btn{
+    padding:0 7px;
+    font-size:10px;
+  }
+
+  .ai-mode-menu{
+    min-width:150px;
+  }
+}
+
+.ai-mode-picker{
+  position:relative;
+  flex:0 0 auto;
+  align-self:flex-end;
+}
+
+.ai-mode-picker-btn{
+  height:38px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--surface2);
+  color:var(--text);
+  font-size:11px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+
+.ai-mode-picker-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+.ai-mode-menu{
+  display:none;
+  position:absolute;
+  bottom:46px;
+  left:0;
+  min-width:165px;
+  padding:5px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  z-index:50;
+}
+
+.ai-mode-menu.open{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.ai-mode-menu button{
+  width:100%;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.ai-mode-menu button:hover,
+.ai-mode-menu button.active{
+  background:var(--surface2);
+  color:var(--accent);
+}
+
+@media(max-width:600px){
+  .ai-mode-picker-btn{
+    padding:0 7px;
+    font-size:10px;
+  }
+
+  .ai-mode-menu{
+    min-width:150px;
+  }
+}

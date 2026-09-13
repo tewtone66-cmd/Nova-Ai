@@ -10,10 +10,21 @@ function getClient() {
   return client;
 }
 
-export function modelFor(kind = "text") {
+export function modelFor(kind = "text", settings = {}) {
+  const selected = settings?.aiModels || {};
+
   if (kind === "coding") {
-    return process.env.OPENAI_CODING_MODEL || process.env.OPENAI_MODEL || "gpt-5-mini";
+    if (selected.coding === "openai") {
+      return process.env.OPENAI_CODING_MODEL || process.env.OPENAI_MODEL || "gpt-5-mini";
+    }
   }
+
+  if (kind === "text" || kind === "chat") {
+    if (selected.chat === "openai") {
+      return process.env.OPENAI_MODEL || "gpt-5-mini";
+    }
+  }
+
   return process.env.OPENAI_MODEL || "gpt-5-mini";
 }
 
@@ -69,14 +80,67 @@ export function buildInstructions(settings = {}, kind) {
   ].filter(Boolean).join("\n\n");
 }
 
-export async function streamResponse({
+
+function selectedProvider(settings = {}, kind = "text") {
+  const models = settings?.aiModels || {};
+
+  if (kind === "coding") return models.coding || "openai";
+  if (kind === "image") return models.image || "openai";
+  if (kind === "video") return models.video || "kling";
+
+  return models.chat || "openai";
+}
+
+function providerConfig(provider) {
+  const configs = {
+    openai: {
+      key: process.env.OPENAI_API_KEY,
+      baseURL: "https://api.openai.com/v1",
+      model: process.env.OPENAI_MODEL || "gpt-5-mini"
+    },
+    groq: {
+      key: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
+      model: process.env.GROQ_MODEL || "openai/gpt-oss-120b"
+    },
+    gemini: {
+      key: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      model: process.env.GEMINI_MODEL || "gemini-3.8-flash"
+    },
+    claude: {
+      key: process.env.ANTHROPIC_API_KEY,
+      baseURL: "https://api.anthropic.com/v1",
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5"
+    },
+    openrouter: {
+      key: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.ai/api/v1",
+      model: process.env.OPENROUTER_MODEL || "openai/gpt-5"
+    }
+  };
+
+  return configs[provider] || null;
+}
+
+export async function* streamResponse({
   messages,
   settings,
   kind,
   useWeb = false,
   signal
 }) {
-  const ai = getClient();
+  const provider = selectedProvider(settings, kind);
+  const config = providerConfig(provider);
+
+  if (!config?.key) {
+    throw new Error(`AI_PROVIDER_NOT_CONFIGURED:${provider}`);
+  }
+
+  const ai = new OpenAI({
+    apiKey: config.key,
+    baseURL: config.baseURL
+  });
 
   const input = messages.map(m => ({
     role: m.role === "assistant" ? "assistant" : "user",
@@ -84,14 +148,26 @@ export async function streamResponse({
   }));
 
   const response = await ai.responses.create({
-    model: modelFor(kind),
+    model: provider === "openai"
+      ? modelFor(kind, settings)
+      : config.model,
     instructions: buildInstructions(settings, kind),
     input,
-    tools: useWeb ? [{ type: "web_search_preview" }] : undefined,
+    tools: useWeb && provider === "openai"
+      ? [{ type: "web_search_preview" }]
+      : undefined,
     stream: true
   });
 
-  return response;
+  for await (const event of response) {
+    if (event.type === "response.output_text.delta") {
+      yield { text: event.delta };
+    }
+
+    if (event.type === "response.completed" && event.response?.usage) {
+      yield { usageMetadata: event.response.usage };
+    }
+  }
 }
 
 export async function generateImage({ prompt, imageFile }) {
