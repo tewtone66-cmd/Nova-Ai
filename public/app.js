@@ -261,9 +261,12 @@ function initAIModelSettings(){
 function setAIMode(mode){
   state.aiMode = mode;
 
-  $$(".ai-mode-btn").forEach(btn=>{
-    btn.classList.toggle("active", btn.dataset.aiMode === mode);
-  });
+  const labels = {
+    chat: "🤖 ChatBot",
+    coding: "💻 Codex",
+    image: "🎨 Image Creator",
+    video: "🎬 Video"
+  };
 
   const placeholders = {
     chat: "پیامت را برای Nova بنویس...",
@@ -272,13 +275,41 @@ function setAIMode(mode){
     video: "توضیح ویدیویی که می‌خواهی بسازی..."
   };
 
-  $("#composer").placeholder = placeholders[mode] || placeholders.chat;
+  if($("#aiModeLabel")){
+    $("#aiModeLabel").textContent = labels[mode] || labels.chat;
+  }
+
+  if($("#composer")){
+    $("#composer").placeholder = placeholders[mode] || placeholders.chat;
+  }
+
+  $$("#aiModeMenu button").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.aiMode === mode);
+  });
+
+  $("#aiModeMenu")?.classList.remove("open");
 }
 
 function initAIModes(){
-  $$(".ai-mode-btn").forEach(btn=>{
-    btn.onclick=()=>setAIMode(btn.dataset.aiMode);
-  });
+  const picker = $("#aiModePickerBtn");
+  const menu = $("#aiModeMenu");
+
+  if(picker && menu){
+    picker.onclick = e=>{
+      e.stopPropagation();
+      menu.classList.toggle("open");
+    };
+
+    $$("#aiModeMenu button").forEach(btn=>{
+      btn.onclick = ()=>{
+        setAIMode(btn.dataset.aiMode);
+      };
+    });
+
+    document.addEventListener("click", ()=>{
+      menu.classList.remove("open");
+    });
+  }
 
   setAIMode(state.aiMode);
 }
