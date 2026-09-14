@@ -8,7 +8,7 @@
     "dev": "node --watch server/index.js",
     "check": "node --check server/index.js",
     "postinstall": "node scripts/nova-hotfix.mjs",
-    "prestart": "node scripts/maintenance-patch.js && node scripts/dev-maintenance-patch.js"
+    "prestart": "node scripts/maintenance-patch.js && node scripts/dev-maintenance-patch.js && node scripts/guest-experience-patch.js"
   },
   "dependencies": {
     "cookie-session": "^2.1.0",
