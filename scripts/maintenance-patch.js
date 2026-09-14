@@ -26,5 +26,14 @@ if(!s.includes("app.get(\"/api/admin/maintenance\"")){
   if(!s.includes(ownerAnchor)) throw new Error("owner anchor not found");
   s=s.replace(ownerAnchor,ownerAnchor+routes);
 }
+
+// Critical persistence fix: restoreRemoteBackup() returns the remote DB,
+// and boot must keep that restored object in memory. Previously boot restored
+// the file and then immediately overwrote it with the stale local `db` object,
+// which caused update logs (and other data) to disappear after every restart.
+const oldBoot='async function boot(){db=load();try{await restoreRemoteBackup(db);save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
+const newBoot='async function boot(){db=load();try{const restored=await restoreRemoteBackup();if(restored)db=restored;save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
+if(s.includes(oldBoot)) s=s.replace(oldBoot,newBoot);
+
 fs.writeFileSync(file,s);
 console.log("Nova maintenance patch ready");
