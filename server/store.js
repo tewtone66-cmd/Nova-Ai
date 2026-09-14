@@ -95,6 +95,14 @@ export function getUserData(db, userId) {
   const wasLegacyTheme = !u.settings || u.settings.nova2ThemeMigrated !== true;
   u.settings = { ...defaultUserSettings, ...u.settings };
   u.settings.memoryCategories = { ...defaultUserSettings.memoryCategories, ...(u.settings.memoryCategories || {}) };
+
+  // Keep the workspace profile name synced with the account username.
+  // Existing users are migrated only when they still have the old generic name.
+  const account = findUserById(db, userId);
+  if (account?.username && (!u.settings.userName || u.settings.userName === "کاربر" || u.settings.userName === "User")) {
+    u.settings.userName = account.username;
+  }
+
   // One-time migration from the old white/green default. Users can still
   // switch back to Light later from Settings; this never runs again.
   if (wasLegacyTheme) {
