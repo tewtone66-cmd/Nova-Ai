@@ -14,21 +14,17 @@ export const defaultUserSettings = {
   userName: "کاربر",
   userBio: "",
   userAvatar: "",
-  // Mood slider — exactly 5 stops, index 0..4 (see server/openai.js for what each does).
   personality: "smart",
   customPrompt: "",
   theme: "green",
   customAccent: "#20a66a",
-  mode: "light",
+  mode: "dark",
   novaEnabled: true,
-  // Memory controls
   memoryEnabled: true,
   memoryCategories: { personal: true, preferences: true, work: true, projects: true },
-  // Voice
   autoSpeak: false,
   voiceLang: "fa-IR",
-  // Motion
-  animationLevel: "normal" // "off" | "reduced" | "normal" | "extra"
+  animationLevel: "reduced"
 };
 
 function defaultUserData() {
@@ -66,21 +62,6 @@ export function save(db) {
   pushRemoteBackup(db);
 }
 
-// ---- optional remote backup (Upstash Redis REST) ------------------------
-//
-// Render's free plan (and most free/serverless hosts) wipes the local disk
-// every time the instance restarts or spins back up after being idle. Since
-// accounts live only in data/nova.json, that means every registered user
-// silently disappears — registering still works (same running process),
-// but a login attempt after the instance recycles fails because the server
-// genuinely has no memory of that account anymore.
-//
-// If UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are set (free tier
-// at https://upstash.com), every save() also mirrors the whole DB to Redis,
-// and restoreRemoteBackup() pulls it back down into the local file the
-// moment the server boots. With no Upstash env vars set, both functions are
-// complete no-ops and everything behaves exactly as it did before (pure
-// local file, fine for local development).
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const REMOTE_KEY = "nova:db-backup";
