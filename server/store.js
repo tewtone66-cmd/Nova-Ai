@@ -4,9 +4,6 @@ import path from "node:path";
 const dataDir = path.resolve("data");
 const dbFile = path.join(dataDir, "nova.json");
 
-// Every field a user's personal workspace can have. New accounts get a
-// fresh copy of this; existing accounts get missing fields backfilled on
-// load so upgrades never crash on old data files.
 export const defaultUserSettings = {
   novaName: "Nova",
   novaBio: "دستیار هوش مصنوعی شما",
@@ -24,7 +21,8 @@ export const defaultUserSettings = {
   memoryCategories: { personal: true, preferences: true, work: true, projects: true },
   autoSpeak: false,
   voiceLang: "fa-IR",
-  animationLevel: "reduced"
+  animationLevel: "reduced",
+  nova2ThemeMigrated: true
 };
 
 function defaultUserData() {
@@ -37,7 +35,6 @@ function defaultUserData() {
 }
 
 const defaults = { users: [], data: {} };
-
 function clone(v) { return JSON.parse(JSON.stringify(v)); }
 
 export function load() {
@@ -92,12 +89,19 @@ export async function restoreRemoteBackup() {
   }
 }
 
-/** Get (creating if needed) the per-user workspace, with any missing fields backfilled. */
 export function getUserData(db, userId) {
   if (!db.data[userId]) db.data[userId] = defaultUserData();
   const u = db.data[userId];
+  const wasLegacyTheme = !u.settings || u.settings.nova2ThemeMigrated !== true;
   u.settings = { ...defaultUserSettings, ...u.settings };
   u.settings.memoryCategories = { ...defaultUserSettings.memoryCategories, ...(u.settings.memoryCategories || {}) };
+  // One-time migration from the old white/green default. Users can still
+  // switch back to Light later from Settings; this never runs again.
+  if (wasLegacyTheme) {
+    u.settings.mode = "dark";
+    u.settings.animationLevel = "reduced";
+    u.settings.nova2ThemeMigrated = true;
+  }
   if (!u.usage) u.usage = { periodStart: Date.now(), tokensUsed: 0 };
   if (!Array.isArray(u.conversations)) u.conversations = [];
   if (!Array.isArray(u.memories)) u.memories = [];
