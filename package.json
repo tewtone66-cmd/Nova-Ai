@@ -8,11 +8,12 @@
     "dev": "node --watch server/index.js",
     "check": "node --check server/index.js",
     "postinstall": "node scripts/nova-hotfix.mjs",
-    "prestart": "node scripts/maintenance-patch.js && node scripts/dev-maintenance-patch.js && node scripts/guest-experience-patch.js && node scripts/owner-features-patch.js"
+    "prestart": "node scripts/maintenance-patch.js && node scripts/dev-maintenance-patch.js && node scripts/guest-experience-patch.js"
   },
   "dependencies": {
     "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "openai": "^7.15.0"
