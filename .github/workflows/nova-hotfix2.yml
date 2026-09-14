@@ -1,0 +1,46 @@
+name: Nova stability patch
+on:
+  push:
+    branches: [nova-v4]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nova-v4
+          fetch-depth: 0
+      - name: Patch existing ux fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('public/ux-fixes.js')
+          s=p.read_text()
+          s=s.replace("setTimeout(()=>send.dataset.busy='0',1200)","setTimeout(()=>send.dataset.busy='0',260)")
+          s=s.replace("updateCache.slice(0,3)","updateCache.slice(0,1)")
+          marker='/* NOVA_STABILITY_HOTFIX_V2 */'
+          if marker not in s:
+            s += r'''
+
+/* NOVA_STABILITY_HOTFIX_V2 */
+(()=>{
+ const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
+ const css=document.createElement('style');css.textContent=`.composer-wrap,.composer,.composer button,.composer textarea{pointer-events:auto!important}.composer,#composer,#sendBtn{touch-action:manipulation!important}.composer-note{pointer-events:none!important}.chat-item .rename{width:30px!important;height:30px!important;min-width:30px!important;padding:0!important;display:grid!important;place-items:center!important;font-size:0!important;border:1px solid var(--border)!important;border-radius:9px!important;background:transparent!important;color:var(--muted,var(--text))!important}.chat-item .rename::before{content:'✎';font-size:15px!important}.chat-item .rename:hover{background:var(--surface2)!important;color:var(--text)!important}`;document.head.appendChild(css);
+ const err=t=>{const s=String(t||'').toLowerCase();if(/not configured|provider_not_configured/.test(s))return'این مدل برای Nova تنظیم نشده است. از Settings → Model AI یک مدل دیگر انتخاب کنید.';if(/401|unauthorized|invalid api key|api key/.test(s))return'احراز هویت سرویس هوش مصنوعی ناموفق بود. تنظیمات سرویس باید بررسی شود.';if(/403|forbidden|permission/.test(s))return'دسترسی سرویس هوش مصنوعی رد شد. تنظیمات دسترسی مدل باید بررسی شود.';if(/404|not found|model.*(not|no).*found/.test(s))return'مدل انتخاب‌شده پیدا نشد. از Settings → Model AI مدل دیگری انتخاب کنید.';if(/429|quota|rate.?limit|credits|insufficient/.test(s))return'سرویس هوش مصنوعی به محدودیت اعتبار یا درخواست رسیده است. مدل دیگری را امتحان کنید.';if(/timeout|timed out|network|fetch failed|econn|socket/.test(s))return'ارتباط با سرویس هوش مصنوعی برقرار نشد. دوباره تلاش کنید.';if(/400|bad request|invalid.*request/.test(s))return'درخواست برای مدل انتخاب‌شده معتبر نبود. دوباره امتحان کنید.';if(/500|502|503|504|server error|service unavailable/.test(s))return'سرویس هوش مصنوعی موقتاً خطای سرور دارد. کمی بعد دوباره تلاش کنید.';return'سرویس هوش مصنوعی نتوانست پاسخ بدهد. لطفاً مدل دیگری را امتحان کنید.'};
+ if(typeof renderMessages==='function'&&!window.__novaStreamFix){window.__novaStreamFix=1;const old=renderMessages;window.renderMessages=function(a=true){if(!a&&state.current&&state.current.messages?.length){const m=state.current.messages.at(-1);if(m?.role==='assistant'){if(/DEBUG\s+(OPENAI|GEMINI|OPENROUTER)/i.test(m.content||''))m.content=err(m.content);const rows=qa('#messages .message'),row=rows.at(-1),b=row?.querySelector('.bubble');if(row&&b){b.className='bubble'+(m.content?'':' typing-bubble');b.innerHTML=m.content?md(m.content):'<span class="typing-dots"><i></i><i></i><i></i></span>';const v=q('#chatView');if(v)v.scrollTop=v.scrollHeight;return;}}}return old(a)}};
+ }
+ const f=q('#supportForm'),i=q('#supportInput'),m=q('#supportMessages');if(f&&!f.dataset.novaSupportFix){f.dataset.novaSupportFix=1;const h=[];const add=(r,t)=>{const e=document.createElement('div');e.className='support-msg '+r;e.textContent=t;m?.appendChild(e);if(m)m.scrollTop=m.scrollHeight};f.addEventListener('submit',async e=>{e.preventDefault();e.stopPropagation();const t=(i?.value||'').trim();if(!t)return;const b=f.querySelector('button[type="submit"]');if(b?.disabled)return;h.push({role:'user',content:t});add('user',t);if(i)i.value='';if(b)b.disabled=true;const typ=document.createElement('div');typ.className='support-msg assistant';typ.textContent='در حال بررسی...';m?.appendChild(typ);let a='';try{const r=await fetch('/api/chat',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:h,kind:'support',useWeb:false})});if(!r.ok)throw Error('خطا در اتصال به پشتیبانی.');const rd=r.body.getReader(),d=new TextDecoder();let x='';while(true){const z=await rd.read();if(z.done)break;x+=d.decode(z.value,{stream:true});const ps=x.split('\n\n');x=ps.pop()||'';for(const p of ps){if(!p.startsWith('data:'))continue;let j;try{j=JSON.parse(p.slice(5))}catch{continue}if(j.type==='delta')a+=j.delta;else if(j.type==='error')throw Error(j.message||'خطا در پشتیبانی.')}}typ.remove();add('assistant',a||'پاسخی دریافت نشد.');h.push({role:'assistant',content:a})}catch(x){typ.remove();add('assistant','⚠️ '+(x.message||'خطا در پشتیبانی.'));h.pop()}finally{if(b)b.disabled=false;i?.focus()}},true)}
+})();
+'''
+          p.write_text(s)
+      - name: Commit
+        run: |
+          git config user.name 'Nova Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/ux-fixes.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: Nova stability hotfix [nova-hotfix]'
+          git push origin nova-v4
