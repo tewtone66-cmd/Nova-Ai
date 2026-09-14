@@ -8,8 +8,8 @@ export const defaultUserSettings = {
   novaName: "Nova",
   novaBio: "دستیار هوش مصنوعی شما",
   novaAvatar: "",
-  userName: "کاربر",
   userBio: "",
+  userName: "کاربر",
   userAvatar: "",
   personality: "smart",
   customPrompt: "",
@@ -57,11 +57,13 @@ export function save(db) {
   fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
   fs.renameSync(tmp, dbFile);
   pushRemoteBackup(db);
+  if (Array.isArray(db.updates)) pushRemoteUpdates(db.updates);
 }
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const REMOTE_KEY = "nova:db-backup";
+const REMOTE_UPDATES_KEY = "nova:updates-backup";
 
 function pushRemoteBackup(db) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
@@ -70,6 +72,15 @@ function pushRemoteBackup(db) {
     headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
     body: JSON.stringify(db)
   }).catch(e => console.error("Nova: remote backup failed:", e.message));
+}
+
+function pushRemoteUpdates(updates) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  fetch(`${UPSTASH_URL}/set/${REMOTE_UPDATES_KEY}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    body: JSON.stringify(updates)
+  }).catch(e => console.error("Nova: remote update-log backup failed:", e.message));
 }
 
 export async function restoreRemoteBackup() {
@@ -88,6 +99,26 @@ export async function restoreRemoteBackup() {
     }
   } catch (e) {
     console.error("Nova: could not restore remote backup (starting with local data instead):", e.message);
+  }
+  return null;
+}
+
+export async function restoreRemoteUpdates() {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/get/${REMOTE_UPDATES_KEY}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+    });
+    const data = await res.json();
+    if (data?.result) {
+      const updates = JSON.parse(data.result);
+      if (Array.isArray(updates)) {
+        console.log(`Nova: restored ${updates.length} update logs from remote backup.`);
+        return updates;
+      }
+    }
+  } catch (e) {
+    console.error("Nova: could not restore remote update logs:", e.message);
   }
   return null;
 }
