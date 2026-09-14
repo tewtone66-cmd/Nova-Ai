@@ -29,13 +29,7 @@ app.use(express.static(path.resolve("public"),{etag:false,lastModified:false,set
 function jsonError(res,status,message,code="ERROR"){return res.status(status).json({ok:false,error:{code,message}});}
 function id(){return crypto.randomUUID();}
 function publicFailure(res,status=500,code="ERROR"){return jsonError(res,status,PUBLIC_AI_ERROR,code);}
-function ownerCredentialsValid(username,password){
-  const expectedUser=process.env.NOVA_OWNER_USERNAME||"";
-  const expectedPass=process.env.NOVA_OWNER_PASSWORD||"";
-  if(!expectedUser||!expectedPass||typeof username!=="string"||typeof password!=="string")return false;
-  const a=Buffer.from(username),b=Buffer.from(expectedUser),c=Buffer.from(password),d=Buffer.from(expectedPass);
-  return a.length===b.length&&c.length===d.length&&crypto.timingSafeEqual(a,b)&&crypto.timingSafeEqual(c,d);
-}
+function ownerCredentialsValid(username,password){const expectedUser=process.env.NOVA_OWNER_USERNAME||"";const expectedPass=process.env.NOVA_OWNER_PASSWORD||"";if(!expectedUser||!expectedPass||typeof username!=="string"||typeof password!=="string")return false;const a=Buffer.from(username),b=Buffer.from(expectedUser),c=Buffer.from(password),d=Buffer.from(expectedPass);return a.length===b.length&&c.length===d.length&&crypto.timingSafeEqual(a,b)&&crypto.timingSafeEqual(c,d);}
 function requireOwner(req,res,next){if(req.session?.owner===true)return next();return jsonError(res,401,"دسترسی فقط برای صاحب سایت مجاز است.","OWNER_UNAUTHORIZED");}
 
 app.use("/api",(req,res,next)=>{const started=Date.now();res.on("finish",()=>console.log(`Nova api: ${req.method} ${req.path} -> ${res.statusCode} (${Date.now()-started}ms, session:${Boolean(req.session&&req.session.userId)})`));next();});
@@ -70,7 +64,7 @@ app.post("/api/chat",async(req,res)=>{const u=getUserData(db,req.user.id);if(!u.
 app.post("/api/chat/stop",(req,res)=>{const requestId=String(req.body.requestId||"");const c=controllers.get(requestId);if(c)c.abort();res.json({ok:true,stopped:Boolean(c)});});
 app.post("/api/conversations/:id/title",async(req,res)=>{try{const u=getUserData(db,req.user.id);const c=u.conversations.find(x=>x.id===req.params.id);if(!c)return jsonError(res,404,"Conversation not found","NOT_FOUND");const firstUser=c.messages.find(m=>m.role==="user")?.content;if(!firstUser)return jsonError(res,400,"No message to title from","VALIDATION");const title=await generateTitle(firstUser);if(title){c.title=title;c.autoTitled=true;save(db);}res.json({ok:true,conversation:c});}catch{return publicFailure(res,500,"TITLE_ERROR");}});
 app.post("/api/image",upload.single("reference"),async(req,res)=>{try{const u=getUserData(db,req.user.id);if(!u.settings.novaEnabled)return jsonError(res,403,"Nova is OFF.","NOVA_OFF");if(getUsage(u).remaining<=0)return jsonError(res,429,"اعتبار روزانه‌ی شما به پایان رسیده. فردا دوباره پر می‌شود.","LIMIT_REACHED");const prompt=String(req.body.prompt||"").trim();if(!prompt)return jsonError(res,400,"Image prompt is required","VALIDATION");const result=await generateImage({prompt,imageFile:req.file?.path,size:req.body.size||"1024x1024",settings:u.settings});addUsage(u,Number(process.env.IMAGE_TOKEN_COST)||2500);save(db);const b64=result?.data?.[0]?.b64_json??result?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData||p.inline_data)?.inlineData?.data??result?.candidates?.[0]?.content?.parts?.find(p=>p.inline_data)?.inline_data?.data??result?.image?.base64;if(!b64)return publicFailure(res,502,"IMAGE_PROVIDER");res.json({ok:true,b64,usage:getUsage(u),ai:getAIInfo(u.settings,"image")});}catch{return publicFailure(res,500,"IMAGE_ERROR");}});
-app.get("/api/health",(req,res)=>res.json({ok:true,providers:{openai:Boolean(process.env.OPENAI_API_KEY),gemini:Boolean(process.env.GEMINI_API_KEY),openrouter:Boolean(process.env.OPENROUTER_API_KEY),stability:Boolean(process.env.STABILITY_API_KEY),pixverse:Boolean(process.env.PIXVERSE_API_KEY),runway:Boolean(process.env.RUNWAY_API_KEY)}});
+app.get("/api/health",(req,res)=>res.json({ok:true,providers:{openai:Boolean(process.env.OPENAI_API_KEY),gemini:Boolean(process.env.GEMINI_API_KEY),openrouter:Boolean(process.env.OPENROUTER_API_KEY),stability:Boolean(process.env.STABILITY_API_KEY),pixverse:Boolean(process.env.PIXVERSE_API_KEY),runway:Boolean(process.env.RUNWAY_API_KEY)}}));
 app.use((req,res)=>{if(req.path.startsWith("/api/"))return jsonError(res,404,"API route not found","NOT_FOUND");res.set("Cache-Control","no-store");res.sendFile(path.resolve("public/index.html"));});
 app.use((err,req,res,next)=>{console.error("Nova unhandled error:",err);if(res.headersSent)return next(err);if(err?.type==="entity.too.large")return publicFailure(res,413,"PAYLOAD_TOO_LARGE");return jsonError(res,500,PUBLIC_AI_ERROR,"SERVER_ERROR");});
 
