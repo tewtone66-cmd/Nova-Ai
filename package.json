@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "check": "node --check server/index.js"
+    "check": "node --check server/index.js",
+    "postinstall": "node scripts/nova-hotfix.mjs"
   },
   "dependencies": {
     "cookie-session": "^2.1.0",
