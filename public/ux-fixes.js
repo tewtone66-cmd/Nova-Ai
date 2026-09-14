@@ -1,115 +1,55 @@
 (() => {
   'use strict';
-
-  const q = (s, r = document) => r.querySelector(s);
-  const qa = (s, r = document) => [...r.querySelectorAll(s)];
-  const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
-
-  const style = document.createElement('style');
-  style.textContent = `
-    *, *::before, *::after { -webkit-tap-highlight-color: transparent !important; tap-highlight-color: transparent !important; }
-    button, a, input, textarea { -webkit-tap-highlight-color: transparent !important; }
-    button:focus { outline: none !important; }
-    button:focus-visible { outline: 2px solid color-mix(in srgb,var(--accent,#20a66a) 55%,transparent) !important; outline-offset: 2px; }
-    #welcome .quick-grid,.quick-grid,.nova-v5-suggestions,.suggestions,.suggestion-grid,.prompt-suggestions,.quick-prompts,.home-suggestions,.welcome-suggestions,[class*="suggestion"] { display:none !important; }
-    .composer-wrap { left:calc(50% + 135px) !important; width:min(900px,calc(100vw - 312px)) !important; transform:translateX(-50%) !important; padding-left:14px !important; padding-right:14px !important; }
-    .composer { width:100% !important; max-width:none !important; display:grid !important; grid-template-columns:36px 36px minmax(0,1fr) 36px 36px !important; grid-template-rows:minmax(36px,auto) !important; align-items:center !important; gap:8px !important; direction:ltr !important; padding:7px !important; box-sizing:border-box !important; }
-    .composer > * { min-width:0; margin:0 !important; }
-    .ai-mode-picker { grid-column:1 !important; grid-row:1 !important; width:36px !important; height:36px !important; position:relative !important; }
-    .ai-mode-picker-btn { width:36px !important; height:36px !important; padding:0 !important; display:flex !important; align-items:center !important; justify-content:center !important; border-radius:12px !important; }
-    .ai-mode-picker-btn span:first-child { display:none !important; }
-    .ai-mode-picker-btn span:last-child { margin:0 !important; font-size:18px !important; line-height:1 !important; }
-    .ai-mode-menu { display:none !important; position:absolute !important; bottom:calc(100% + 8px) !important; left:0 !important; z-index:100 !important; }
-    .ai-mode-menu.open { display:block !important; }
-    #attachBtn { grid-column:2 !important; grid-row:1 !important; width:36px !important; height:36px !important; }
-    #composer { grid-column:3 !important; grid-row:1 !important; width:100% !important; min-width:0 !important; direction:rtl !important; text-align:right !important; align-self:center !important; }
-    #micBtn { grid-column:4 !important; grid-row:1 !important; width:36px !important; height:36px !important; position:relative !important; display:flex !important; align-items:center !important; justify-content:center !important; font-size:0 !important; }
-    .composer-tools { display:contents !important; }
-    #webBtn,#imageBtn,.web-search-btn,.image-prompt-btn,.prompt-btn { display:none !important; }
-    #sendBtn { grid-column:5 !important; grid-row:1 !important; width:36px !important; height:36px !important; min-width:36px !important; border-radius:12px !important; display:grid !important; place-items:center !important; }
-    #micBtn::before { content:""; width:9px; height:17px; border:2px solid currentColor; border-radius:7px; box-sizing:border-box; }
-    #micBtn::after { content:""; position:absolute; width:16px; height:11px; border:2px solid currentColor; border-top:0; border-radius:0 0 10px 10px; bottom:7px; left:50%; transform:translateX(-50%); box-sizing:border-box; }
-    #micBtn.recording { color:var(--accent,#20a66a); }
-    #micBtn.recording::before { box-shadow:0 0 0 3px color-mix(in srgb,currentColor 12%,transparent); }
-    .side-bottom { padding:12px !important; }
-    .side-action { width:100% !important; min-height:42px !important; margin:3px 0 !important; padding:9px 11px !important; display:flex !important; align-items:center !important; gap:10px !important; border:1px solid transparent !important; border-radius:12px !important; background:transparent !important; color:var(--text) !important; font-size:13px !important; text-align:right !important; }
-    .side-action:hover { background:var(--surface2) !important; border-color:var(--border) !important; }
-    .side-action .nova-action-icon { width:20px; height:20px; flex:none; opacity:.82; }
-    .side-action .nova-action-icon svg { width:20px; height:20px; display:block; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-    .overlay { background:rgba(3,7,5,.62) !important; backdrop-filter:blur(12px) !important; }
-    .settings-panel,.support-panel { background:var(--surface) !important; color:var(--text) !important; border-left:1px solid var(--border) !important; box-shadow:-24px 0 70px rgba(0,0,0,.35) !important; }
-    .support-panel { width:min(680px,100%) !important; height:100% !important; display:flex !important; flex-direction:column !important; }
-    .support-messages { flex:1 !important; overflow:auto !important; padding:18px 22px !important; }
-    .support-msg { max-width:90%; padding:12px 14px; border:1px solid var(--border); border-radius:14px; background:var(--surface2); color:var(--text); margin-bottom:10px; line-height:1.7; }
-    .support-form { display:flex !important; gap:8px !important; padding:12px 18px calc(12px + env(safe-area-inset-bottom)) !important; border-top:1px solid var(--border) !important; background:var(--surface) !important; }
-    .support-form input { flex:1 !important; min-width:0 !important; border:1px solid var(--border) !important; background:var(--surface2) !important; color:var(--text) !important; border-radius:12px !important; padding:10px 12px !important; outline:0 !important; }
-    .support-form .send-btn { flex:0 0 40px !important; }
-    .topbar,.top-bar { min-height:52px !important; }
-    .topbar button,.top-bar button { display:inline-flex !important; align-items:center !important; justify-content:center !important; }
-    .sidebar,.chat-sidebar { contain:layout paint; }
-    .chat-list { overflow-anchor:auto; }
-    @media (max-width:900px) {
-      .composer-wrap { left:50% !important; width:calc(100vw - 16px) !important; padding-left:4px !important; padding-right:4px !important; }
-      .composer { grid-template-columns:34px 34px minmax(0,1fr) 34px 34px !important; gap:6px !important; padding:6px !important; }
-      .ai-mode-picker,.ai-mode-picker-btn,#attachBtn,#micBtn,#sendBtn { width:34px !important; height:34px !important; }
-      #sendBtn { min-width:34px !important; }
-      .support-panel { width:100% !important; }
-    }
+  const q=(s,r=document)=>r.querySelector(s), qa=(s,r=document)=>[...r.querySelectorAll(s)];
+  const on=(e,n,f,o)=>e&&e.addEventListener(n,f,o);
+  const css=document.createElement('style');
+  css.textContent=`
+    *,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    button:focus{outline:none!important}button:focus-visible{outline:2px solid color-mix(in srgb,var(--accent,#20a66a) 55%,transparent)!important;outline-offset:2px}
+    .composer-wrap{left:calc(50% + 135px)!important;width:min(900px,calc(100vw - 312px))!important;transform:translateX(-50%)!important;padding:0 14px!important}
+    .composer{width:100%!important;max-width:none!important;display:grid!important;grid-template-columns:36px 36px minmax(0,1fr) 36px 36px!important;align-items:center!important;gap:8px!important;padding:7px!important}
+    .composer>*{min-width:0;margin:0!important}.ai-mode-picker{grid-column:1!important;position:relative!important}.ai-mode-picker-btn{width:36px!important;height:36px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important}.ai-mode-picker-btn span:first-child{display:none!important}.ai-mode-menu{z-index:1000!important}
+    #attachBtn{grid-column:2!important;width:36px!important;height:36px!important}#composer{grid-column:3!important;width:100%!important;min-width:0!important;direction:rtl!important;text-align:right!important}#micBtn{grid-column:4!important;width:36px!important;height:36px!important}#sendBtn{grid-column:5!important;width:36px!important;height:36px!important;min-width:36px!important}
+    .composer-tools{display:contents!important}#webBtn,#imageBtn,.web-search-btn,.image-prompt-btn{display:none!important}
+    .side-bottom{padding:12px!important}.side-action{width:100%!important;min-height:42px!important;margin:3px 0!important;padding:9px 11px!important;display:flex!important;align-items:center!important;gap:10px!important;border:1px solid transparent!important;border-radius:12px!important;background:transparent!important;color:var(--text)!important;font-size:13px!important;text-align:right!important}.side-action:hover{background:var(--surface2)!important;border-color:var(--border)!important}
+    .nova-update-btn{font-weight:600!important}.nova-update-icon{opacity:.8}
+    .overlay{transition:opacity .22s ease,visibility .22s ease!important}.overlay.nova-smooth{opacity:0!important;visibility:hidden!important;pointer-events:none!important}.overlay.nova-smooth.nova-open{opacity:1!important;visibility:visible!important;pointer-events:auto!important}.overlay.nova-smooth .settings-panel,.overlay.nova-smooth .support-panel{transform:translateY(12px) scale(.985);opacity:0;transition:transform .25s cubic-bezier(.2,.8,.2,1),opacity .2s ease!important}.overlay.nova-smooth.nova-open .settings-panel,.overlay.nova-smooth.nova-open .support-panel{transform:translateY(0) scale(1);opacity:1}
+    .nova-update-overlay{position:fixed!important;inset:0!important;z-index:9999!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(2,5,4,.72)!important;backdrop-filter:blur(16px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}.nova-update-overlay.open{opacity:1;visibility:visible;pointer-events:auto}.nova-update-card{width:min(520px,100%);max-height:min(680px,90vh);overflow:auto;background:var(--surface,#151817);color:var(--text,#f5f7f6);border:1px solid var(--border,#2a302d);border-radius:22px;box-shadow:0 30px 100px rgba(0,0,0,.5);padding:24px;transform:translateY(14px) scale(.98);opacity:0;transition:transform .28s ease,opacity .22s ease}.nova-update-overlay.open .nova-update-card{transform:none;opacity:1}.nova-update-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.nova-update-head h2{margin:4px 0 0;font-size:21px}.nova-update-close{width:36px;height:36px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);font-size:22px;cursor:pointer}.nova-update-item{padding:15px 0;border-bottom:1px solid var(--border)}.nova-update-item:last-child{border-bottom:0}.nova-update-item h3{margin:0 0 5px;font-size:15px}.nova-update-item p{margin:0;color:var(--muted,#aab2ad);line-height:1.75;font-size:13px}.nova-update-meta{font-size:11px;color:var(--muted,#8f9892);margin-bottom:6px}.nova-update-more{width:100%;margin-top:16px;height:44px;border:0;border-radius:13px;background:var(--accent,#20a66a);color:#fff;font-weight:700;cursor:pointer}.nova-updates-page{position:fixed;inset:0;z-index:9998;background:var(--bg,#0b0d0c);color:var(--text,#f5f7f6);overflow:auto;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .25s ease,transform .28s ease}.nova-updates-page.open{opacity:1;transform:none;pointer-events:auto}.nova-updates-shell{width:min(920px,100%);margin:auto;padding:34px 20px 60px}.nova-updates-top{display:flex;align-items:center;gap:12px;margin-bottom:42px}.nova-updates-back{width:40px;height:40px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);cursor:pointer;font-size:20px}.nova-updates-title small{color:var(--accent);font-weight:700;letter-spacing:.08em}.nova-updates-title h1{margin:7px 0 0;font-size:clamp(28px,6vw,48px);line-height:1.15}.nova-updates-list{display:grid;gap:14px}.nova-update-full{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px}.nova-update-full h2{margin:0 0 7px;font-size:19px}.nova-update-full .summary{color:var(--text);font-size:14px;line-height:1.8}.nova-update-full .details{color:var(--muted);font-size:13px;line-height:1.9;white-space:pre-wrap;margin-top:10px}.nova-update-badge{display:inline-flex;padding:4px 8px;border-radius:8px;background:color-mix(in srgb,var(--accent,#20a66a) 14%,transparent);color:var(--accent,#20a66a);font-size:11px;margin-left:7px}.nova-update-empty{padding:40px;text-align:center;color:var(--muted)}
+    @media(max-width:900px){.composer-wrap{left:50%!important;width:calc(100vw - 16px)!important;padding:0 4px!important}.composer{grid-template-columns:34px 34px minmax(0,1fr) 34px 34px!important;gap:6px!important;padding:6px!important}.ai-mode-picker-btn,#attachBtn,#micBtn,#sendBtn{width:34px!important;height:34px!important}#sendBtn{min-width:34px!important}.nova-update-shell{padding:24px 15px 45px}}
   `;
-  document.head.appendChild(style);
+  document.head.appendChild(css);
 
-  function getUserName() {
-    const candidates = [q('#userName')?.textContent,window.currentUser?.username,window.currentUser?.name,window.user?.username,window.user?.name,q('[data-username]')?.dataset.username,q('.profile-name')?.textContent];
-    const value = candidates.find(v => v && String(v).trim() && !['کاربر','User','there'].includes(String(v).trim()));
-    return value ? String(value).trim() : 'کاربر';
+  const closeSidebar=()=>{qa('#sidebar,.chat-sidebar,.mobile-sidebar,.chat-drawer,[data-sidebar]').forEach(s=>{s.classList.remove('open','active','show','visible');});qa('#sidebarOverlay,#chatSidebarOverlay,#mobileSidebarOverlay,.sidebar-overlay').forEach(e=>e.classList.add('hidden'));document.body.classList.remove('sidebar-open','drawer-open','chat-sidebar-open','menu-open');};
+  const setupSmoothOverlay=overlay=>{if(!overlay||overlay.dataset.novaSmooth)return;overlay.dataset.novaSmooth='1';overlay.classList.add('nova-smooth');const sync=()=>{const hidden=overlay.classList.contains('hidden');overlay.classList.toggle('nova-open',!hidden)};new MutationObserver(sync).observe(overlay,{attributes:true,attributeFilter:['class']});sync();};
+  const openSmooth=overlay=>{if(!overlay)return;overlay.classList.remove('hidden');requestAnimationFrame(()=>overlay.classList.add('nova-open'));};
+  const closeSmooth=overlay=>{if(!overlay)return;overlay.classList.remove('nova-open');setTimeout(()=>overlay.classList.add('hidden'),240);};
+
+  function makeUpdatesUI(){
+    if(q('#novaUpdateOverlay'))return;
+    const pop=document.createElement('div');pop.id='novaUpdateOverlay';pop.className='nova-update-overlay';pop.innerHTML=`<section class="nova-update-card" role="dialog" aria-modal="true"><div class="nova-update-head"><div><small style="color:var(--accent)">NOVA UPDATE</small><h2>آپدیت‌های جدید Nova</h2></div><button class="nova-update-close" aria-label="بستن">×</button></div><div class="nova-update-list"></div><button class="nova-update-more">اطلاعات بیشتر</button></section>`;document.body.appendChild(pop);
+    const page=document.createElement('div');page.id='novaUpdatesPage';page.className='nova-updates-page';page.innerHTML=`<div class="nova-updates-shell"><div class="nova-updates-top"><button class="nova-updates-back" aria-label="بازگشت">‹</button><div class="nova-updates-title"><small>NOVA V5</small><h1>آپدیت های جدید Nova V5</h1></div></div><div class="nova-updates-list"></div></div>`;document.body.appendChild(page);
+    on(q('.nova-update-close',pop),'click',()=>pop.classList.remove('open'));on(q('.nova-update-more',pop),'click',()=>{pop.classList.remove('open');openUpdatesPage();});on(q('.nova-updates-back',page),'click',closeUpdatesPage);
+    on(document,'keydown',e=>{if(e.key==='Escape'){pop.classList.remove('open');closeUpdatesPage();}});
   }
+  let updateCache=[];
+  async function loadUpdates(){try{const r=await fetch('/api/updates',{credentials:'include',cache:'no-store'});const d=await r.json();if(!r.ok||!d.ok)throw Error('updates');updateCache=Array.isArray(d.updates)?d.updates:[];renderUpdatePopup();renderUpdatesPage();return updateCache}catch(e){console.warn('Nova updates unavailable',e);return updateCache;}}
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  function renderUpdatePopup(){const box=q('#novaUpdateOverlay .nova-update-list');if(!box)return;box.innerHTML=updateCache.slice(0,3).map(u=>`<article class="nova-update-item"><div class="nova-update-meta"><span class="nova-update-badge">${esc(u.version||'V5')}</span>${esc(u.date||'')}</div><h3>${esc(u.title)}</h3><p>${esc(u.summary||u.details||'')}</p></article>`).join('')||'<div class="nova-update-empty">فعلاً آپدیت جدیدی ثبت نشده.</div>';}
+  function renderUpdatesPage(){const box=q('#novaUpdatesPage .nova-updates-list');if(!box)return;box.innerHTML=updateCache.map(u=>`<article class="nova-update-full"><div class="nova-update-meta"><span class="nova-update-badge">${esc(u.version||'V5')}</span>${esc(u.date||'')}</div><h2>${esc(u.title)}</h2><div class="summary">${esc(u.summary||'')}</div>${u.details?`<div class="details">${esc(u.details)}</div>`:''}</article>`).join('')||'<div class="nova-update-empty">آپدیتی برای نمایش وجود ندارد.</div>';}
+  function openUpdatesPage(){q('#novaUpdatesPage')?.classList.add('open');history.pushState({novaUpdates:true},'',location.pathname+'?view=updates');closeSidebar();loadUpdates();}
+  function closeUpdatesPage(){const p=q('#novaUpdatesPage');if(!p)return;p.classList.remove('open');if(new URLSearchParams(location.search).get('view')==='updates')history.back();}
+  async function maybeShowUpdate(){makeUpdatesUI();const list=await loadUpdates();if(!list.length)return;const newest=list[0];const seen=localStorage.getItem('nova:lastUpdateSeen');if(seen!==newest.id){q('#novaUpdateOverlay')?.classList.add('open');localStorage.setItem('nova:lastUpdateSeen',newest.id);}}
+  function addSidebarUpdateButton(){const bottom=q('.side-bottom');if(!bottom||q('#novaUpdatesBtn'))return;const b=document.createElement('button');b.id='novaUpdatesBtn';b.className='side-action nova-update-btn';b.innerHTML='<span class="nova-update-icon">✦</span><span>آپدیت‌های Nova</span>';bottom.insertBefore(b,q('#openSettings')||bottom.firstChild);on(b,'click',()=>{closeSidebar();openUpdatesPage();});}
 
-  function cleanHome() {
-    const welcome = q('#welcome');
-    if (!welcome) return;
-    qa('button,a', welcome).forEach(el => { const text=(el.textContent||'').trim().toLowerCase(); if (/^(web search|image|prompt|پرامپت|جستجو|جستجوی وب|ساخت تصویر)$/.test(text)) el.style.setProperty('display','none','important'); });
-    const heading = qa('h1,h2,h3,.welcome-title,.welcome-heading,.hero-title', welcome).find(el => { const t=(el.textContent||'').trim().toLowerCase(); return /welcome|خوش آمد|سلام|nova/.test(t) || el.classList.contains('welcome-title'); });
-    if (heading) heading.textContent=`Welcome to Nova AI, ${getUserName()}`;
+  function wirePanels(){
+    const so=q('#settingsOverlay'),po=q('#supportOverlay');setupSmoothOverlay(so);setupSmoothOverlay(po);
+    on(q('#openSettings'),'click',()=>{closeSidebar();});on(q('#settingsBtn'),'click',()=>{closeSidebar();});
+    const sb=q('#supportBtn');if(sb&&!sb.dataset.novaBound){sb.dataset.novaBound='1';on(sb,'click',()=>{closeSidebar();closeSmooth(so);openSmooth(po);},true);}
+    on(q('#closeSettings'),'click',()=>closeSmooth(so));on(q('#closeSupport'),'click',()=>closeSmooth(po));
   }
-
-  function installIcons() {
-    const settings=q('#openSettings'),support=q('#supportBtn'),topSettings=q('#settingsBtn');
-    const icon=(name)=>{ const common='class="nova-action-icon" aria-hidden="true"'; if(name==='settings') return `<span ${common}><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="m19.4 15 .1.1a2 2 0 0 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4V19a2 2 0 0 1-4 0v-.1a2 2 0 0 0-3.4-1.4l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1A2 2 0 0 0 1.6 12H2a2 2 0 0 1 0-4h-.4a2 2 0 0 0 1.4-3.4l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1A2 2 0 0 0 9.2 3V2.9a2 2 0 0 1 4 0V3a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1A2 2 0 0 0 20.8 11h.4a2 2 0 0 1 0 4h-.4a2 2 0 0 0-1.4 0Z"/></svg></span>`; return `<span ${common}><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2v-4.1A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8.5 10.5h7M8.5 13.5h5"/></svg></span>`; };
-    if(settings&&!settings.querySelector('.nova-action-icon')) settings.insertAdjacentHTML('afterbegin',icon('settings'));
-    if(support&&!support.querySelector('.nova-action-icon')) support.insertAdjacentHTML('afterbegin',icon('support'));
-    if(topSettings&&!topSettings.querySelector('svg')) topSettings.innerHTML=icon('settings');
-  }
-
-  function closeChatSidebar() {
-    const sidebars=qa('#chatSidebar,#sidebar,.chat-sidebar,.mobile-sidebar,.chat-drawer,[data-sidebar],.sidebar');
-    sidebars.forEach(sidebar=>{ sidebar.classList.remove('open','active','show','visible'); sidebar.classList.add('hidden'); sidebar.setAttribute('aria-hidden','true'); });
-    qa('#sidebarOverlay,#chatSidebarOverlay,#mobileSidebarOverlay,.sidebar-overlay').forEach(el=>el.classList.add('hidden'));
-    document.body.classList.remove('sidebar-open','drawer-open','chat-sidebar-open','menu-open');
-  }
-
-  function wirePanels() {
-    const settingsBtn=q('#openSettings'),topSettings=q('#settingsBtn'),closeSettings=q('#closeSettings'),supportBtn=q('#supportBtn'),closeSupport=q('#closeSupport');
-    const settingsOverlay=q('#settingsOverlay'),supportOverlay=q('#supportOverlay');
-    const openSettingsSafe=()=>{ try{if(typeof window.openSettings==='function') window.openSettings(); else settingsOverlay?.classList.remove('hidden');}catch(e){console.warn('Nova settings panel:',e);settingsOverlay?.classList.remove('hidden');} };
-    settingsBtn&&(settingsBtn.onclick=openSettingsSafe);
-    topSettings&&(topSettings.onclick=openSettingsSafe);
-    closeSettings&&(closeSettings.onclick=()=>settingsOverlay?.classList.add('hidden'));
-    supportBtn&&(supportBtn.onclick=()=>{ closeChatSidebar(); settingsOverlay?.classList.add('hidden'); supportOverlay?.classList.remove('hidden'); });
-    closeSupport&&(closeSupport.onclick=()=>supportOverlay?.classList.add('hidden'));
-    const form=q('#supportForm'),input=q('#supportInput'),messages=q('#supportMessages');
-    if(form&&!form.dataset.v5Bound){
-      form.dataset.v5Bound='1';
-      form.onsubmit=e=>{e.preventDefault();const text=(input?.value||'').trim();if(!text)return;const user=document.createElement('div');user.className='support-msg';user.textContent=text;messages?.appendChild(user);if(input)input.value='';const bot=document.createElement('div');bot.className='support-msg support-bot';bot.innerHTML='<b>پشتیبانی Nova</b><div>پیامت دریافت شد. این بخش فعلاً آزمایشی است.</div>';messages?.appendChild(bot);messages?.scrollTo({top:messages.scrollHeight,behavior:'smooth'});};
-    }
-  }
-
-  // Do not intercept the model-picker click. The native app.js handler must receive it.
-  function normalizePicker(){const picker=q('.ai-mode-picker'),menu=q('.ai-mode-menu');if(!picker||!menu||picker.dataset.v5Bound)return;picker.dataset.v5Bound='1';on(document,'click',e=>{if(!picker.contains(e.target))menu.classList.remove('open');},true);}
-  function normalizeButtons(){const composer=q('.composer');if(!composer)return;qa('button',composer).forEach(b=>{b.style.setProperty('align-self','center','important');b.style.setProperty('margin-top','0','important');b.style.setProperty('margin-bottom','0','important');});}
-  function stabilizeScroll(){const area=q('#chatView,.chat-list,.messages,.chat-messages,.conversation');if(!area||area.dataset.v5Scroll)return;area.dataset.v5Scroll='1';on(area,'scroll',()=>{area.style.scrollBehavior='auto';},{passive:true});}
-  function preventDoubleSend(){const send=q('#sendBtn,.send-btn,[data-action="send"]');if(!send||send.dataset.v5Bound)return;send.dataset.v5Bound='1';on(send,'click',e=>{if(send.dataset.v5Busy==='1'){e.preventDefault();e.stopImmediatePropagation();return;}send.dataset.v5Busy='1';setTimeout(()=>{send.dataset.v5Busy='0';},1200);},true);}
-  function guardAccountAppearance(){if(typeof window.applyAppearance!=='function'||window.applyAppearance.__novaV5Guard)return;const original=window.applyAppearance;const guarded=function(...args){try{return original.apply(this,args);}catch(err){console.warn('Nova: optional appearance element missing:',err);const s=window.state?.settings;if(!s)return;const setText=(id,v)=>{const e=q('#'+id);if(e)e.textContent=v;};const setHtml=(id,v)=>{const e=q('#'+id);if(e)e.innerHTML=v;};setText('brandName',s.novaName||'Nova');setText('mobileName',s.novaName||'Nova');setText('heroName',s.novaName||'Nova');setText('userName',s.userName||'کاربر');setText('statusText',s.novaEnabled?'Nova ON':'Nova OFF');setText('limitText',(window.state?.usage?.percent??100)+'%');['brandAvatar','mobileAvatar','heroAvatar','userAvatar'].forEach(id=>{if(q('#'+id))setHtml(id,q('#'+id).textContent||'N');});}};guarded.__novaV5Guard=true;window.applyAppearance=guarded;}
-  function run(){guardAccountAppearance();cleanHome();installIcons();wirePanels();normalizePicker();normalizeButtons();stabilizeScroll();preventDoubleSend();}
-  let scheduled=false;const schedule=()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;run();});};
-  on(document,'DOMContentLoaded',run);const observer=new MutationObserver(schedule);const root=document.body||document.documentElement;if(root)observer.observe(root,{childList:true,subtree:true});run();
+  function preventDoubleSend(){const send=q('#sendBtn');if(!send||send.dataset.novaGuard)return;send.dataset.novaGuard='1';on(send,'click',e=>{if(send.dataset.busy==='1'){e.preventDefault();e.stopImmediatePropagation();return}send.dataset.busy='1';setTimeout(()=>send.dataset.busy='0',1200)},true);}
+  function guardModelPicker(){const picker=q('.ai-mode-picker'),menu=q('.ai-mode-menu');if(!picker||!menu||picker.dataset.novaPicker)return;picker.dataset.novaPicker='1';on(document,'click',e=>{if(!picker.contains(e.target))menu.classList.remove('open');});}
+  function observeApp(){const app=q('#app');if(!app)return;const ready=()=>{if(!app.classList.contains('hidden')){addSidebarUpdateButton();wirePanels();preventDoubleSend();guardModelPicker();maybeShowUpdate();}};ready();new MutationObserver(ready).observe(app,{attributes:true,attributeFilter:['class']});}
+  on(window,'popstate',()=>{if(new URLSearchParams(location.search).get('view')==='updates'){makeUpdatesUI();q('#novaUpdatesPage')?.classList.add('open');loadUpdates();}else q('#novaUpdatesPage')?.classList.remove('open');});
+  on(document,'DOMContentLoaded',()=>{makeUpdatesUI();observeApp();if(new URLSearchParams(location.search).get('view')==='updates')openUpdatesPage();});
 })();
