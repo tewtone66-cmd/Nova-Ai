@@ -91,7 +91,7 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
     try {
       response = await ai.responses.create({ model: config.model, instructions: buildInstructions(settings, kind), input, tools: useWeb ? [{type:"web_search_preview"}] : undefined, stream: true }, signal ? { signal } : undefined);
     } catch (error) {
-      yield { text: `⚠️ DEBUG OPENAI: ${error?.message || String(error)}` };
+      yield { text: PUBLIC_AI_ERROR };
       return;
     }
     try {
@@ -100,7 +100,7 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
         if (event.type === "response.completed" && event.response?.usage) yield { usageMetadata: event.response.usage };
       }
     } catch (error) {
-      yield { text: `\n\n⚠️ DEBUG OPENAI STREAM: ${error?.message || String(error)}` };
+      yield { text: `\n\n${PUBLIC_AI_ERROR}` };
     }
     return;
   }
@@ -114,7 +114,7 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
       stream_options: {include_usage:true}
     }, signal ? { signal } : undefined);
   } catch (error) {
-    yield { text: `⚠️ DEBUG ${provider.toUpperCase()}: ${error?.message || String(error)}` };
+    yield { text: PUBLIC_AI_ERROR };
     return;
   }
   try {
@@ -124,7 +124,7 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
       if(chunk.usage) yield {usageMetadata:chunk.usage};
     }
   } catch (error) {
-    yield { text: `\n\n⚠️ DEBUG ${provider.toUpperCase()} STREAM: ${error?.message || String(error)}` };
+    yield { text: `\n\n${PUBLIC_AI_ERROR}` };
   }
 }
 
