@@ -87,7 +87,13 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
   if (provider === "openai") {
     const ai = new OpenAI({ apiKey: config.key, baseURL: config.baseURL });
     const input = messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") }));
-    const response = await ai.responses.create({ model: config.model, instructions: buildInstructions(settings, kind), input, tools: useWeb ? [{type:"web_search_preview"}] : undefined, stream: true }, signal ? { signal } : undefined);
+    let response;
+    try {
+      response = await ai.responses.create({ model: config.model, instructions: buildInstructions(settings, kind), input, tools: useWeb ? [{type:"web_search_preview"}] : undefined, stream: true }, signal ? { signal } : undefined);
+    } catch (error) {
+      yield { text: `⚠️ DEBUG OPENAI: ${error?.message || String(error)}` };
+      return;
+    }
     let emitted = false;
     try {
       for await (const event of response) {
@@ -98,19 +104,23 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
         if (event.type === "response.completed" && event.response?.usage) yield { usageMetadata: event.response.usage };
       }
     } catch (error) {
-      // If the upstream stream closes after text was already delivered, keep the
-      // answer instead of turning a useful partial/complete answer into a generic error.
-      if (!emitted) throw error;
+      yield { text: `\n\n⚠️ DEBUG OPENAI STREAM: ${error?.message || String(error)}` };
     }
     return;
   }
   const ai = new OpenAI({ apiKey: config.key, baseURL: config.baseURL });
-  const response = await ai.chat.completions.create({
-    model: config.model,
-    messages: [{role:"system",content:buildInstructions(settings,kind)}, ...messages.map(m => ({role:m.role === "assistant" ? "assistant" : "user", content:String(m.content || "")}))],
-    stream: true,
-    stream_options: {include_usage:true}
-  }, signal ? { signal } : undefined);
+  let response;
+  try {
+    response = await ai.chat.completions.create({
+      model: config.model,
+      messages: [{role:"system",content:buildInstructions(settings,kind)}, ...messages.map(m => ({role:m.role === "assistant" ? "assistant" : "user", content:String(m.content || "")}))],
+      stream: true,
+      stream_options: {include_usage:true}
+    }, signal ? { signal } : undefined);
+  } catch (error) {
+    yield { text: `⚠️ DEBUG ${provider.toUpperCase()}: ${error?.message || String(error)}` };
+    return;
+  }
   let emitted = false;
   try {
     for await(const chunk of response) {
@@ -119,7 +129,7 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
       if(chunk.usage) yield {usageMetadata:chunk.usage};
     }
   } catch (error) {
-    if (!emitted) throw error;
+    yield { text: `\n\n⚠️ DEBUG ${provider.toUpperCase()} STREAM: ${error?.message || String(error)}` };
   }
 }
 
