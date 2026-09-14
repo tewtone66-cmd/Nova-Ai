@@ -16,7 +16,7 @@ const defaults = {
     customPrompt: "",
     theme: "green",
     customAccent: "#20a66a",
-    mode: "light",
+    mode: "dark",
     novaEnabled: true,
     limit: 100
   },
