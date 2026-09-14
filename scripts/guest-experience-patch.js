@@ -4,17 +4,9 @@ import path from "node:path";
 const serverFile=path.resolve("server/index.js");
 let s=fs.readFileSync(serverFile,"utf8");
 
-// When a guest registers, turn the existing guest record into the new account
-// instead of starting from an empty account. This keeps the guest experience
-// connected to the newly created account.
 const registerOld='app.post("/api/auth/register",(req,res)=>{db=load();const {username,password,email,phone}=req.body||{};const uCheck=validateUsername(username);if(!uCheck.ok)return jsonError(res,400,uCheck.message,"INVALID_USERNAME");const pCheck=validatePassword(password);if(!pCheck.ok)return jsonError(res,400,pCheck.message,"WEAK_PASSWORD");const cCheck=validateContact({email,phone});if(!cCheck.ok)return jsonError(res,400,cCheck.message,"INVALID_CONTACT");if(findUserByUsername(db,uCheck.value))return jsonError(res,409,"این نام کاربری قبلاً استفاده شده است.","USERNAME_TAKEN");const {salt,hash}=hashPassword(password);const user={id:id(),username:uCheck.value,passwordSalt:salt,passwordHash:hash,email:email?String(email).trim():"",phone:phone?String(phone).trim():"",createdAt:Date.now()};db.users.push(user);getUserData(db,user.id);save(db);req.session.userId=user.id;res.json({ok:true,user:publicUser(user)});});';
 const registerNew='app.post("/api/auth/register",(req,res)=>{db=load();const {username,password,email,phone}=req.body||{};const uCheck=validateUsername(username);if(!uCheck.ok)return jsonError(res,400,uCheck.message,"INVALID_USERNAME");const pCheck=validatePassword(password);if(!pCheck.ok)return jsonError(res,400,pCheck.message,"WEAK_PASSWORD");const cCheck=validateContact({email,phone});if(!cCheck.ok)return jsonError(res,400,cCheck.message,"INVALID_CONTACT");if(findUserByUsername(db,uCheck.value))return jsonError(res,409,"این نام کاربری قبلاً استفاده شده است.","USERNAME_TAKEN");const guestId=req.session?.userId;const guestUser=guestId?findUserById(db,guestId):null;const guestData=guestUser?.isGuest?getUserData(db,guestUser.id):null;const {salt,hash}=hashPassword(password);const user={id:id(),username:uCheck.value,passwordSalt:salt,passwordHash:hash,email:email?String(email).trim():"",phone:phone?String(phone).trim():"",createdAt:Date.now()};db.users.push(user);const newData=getUserData(db,user.id);if(guestData){newData.settings={...guestData.settings};if(newData.settings.userName==="مهمان")newData.settings.userName=uCheck.value;newData.conversations=guestData.conversations;newData.memories=guestData.memories;newData.usage=guestData.usage;delete db.data[guestUser.id];db.users=db.users.filter(x=>x.id!==guestUser.id);}save(db);req.session.userId=user.id;res.json({ok:true,user:publicUser(user),upgradedGuest:Boolean(guestData)});});';
 if(s.includes(registerOld)) s=s.replace(registerOld,registerNew);
-
-// Make guest sessions visibly identifiable to the client while retaining the
-// existing server data model used by the app.
-const guestRouteOld='app.post("/api/auth/guest",(req,res)=>{db=load();let username;do{username="guest"+Math.floor(100000+Math.random()*900000);}while(findUserByUsername(db,username));const {salt,hash}=hashPassword(crypto.randomBytes(24).toString("hex"));const user={id:id(),username,passwordSalt:salt,passwordHash:hash,email:"",phone:"",isGuest:true,createdAt:Date.now()};db.users.push(user);const u=getUserData(db,user.id);u.settings.userName="مهمان";save(db);req.session.userId=user.id;res.json({ok:true,user:publicUser(user)});});';
-if(!s.includes(guestRouteOld)) console.warn("Nova guest patch: guest route anchor not found; register upgrade may still work.");
 
 fs.writeFileSync(serverFile,s);
 
@@ -46,7 +38,12 @@ function ensureGuestSettingsOption(){
   box.id="guestRegisterSection";
   box.innerHTML=\`<h3>🔐 ثبت نام</h3><p class="hint">اکانت بساز تا تجربه Nova کامل‌تر بشه. گفت‌وگوهای همین حساب مهمان مستقیماً به اکانت جدیدت منتقل می‌شن.</p><button type="button" id="guestRegisterBtn" class="primary-btn">ثبت نام و ساخت اکانت</button>\`;
   panel.insertBefore(box,panel.firstElementChild);
-  document.getElementById("guestRegisterBtn").onclick=()=>{document.getElementById("settingsOverlay")?.classList.add("hidden");showRegisterScreen();};
+  document.getElementById("guestRegisterBtn").onclick=()=>{
+    document.getElementById("settingsOverlay")?.classList.add("hidden");
+    document.getElementById("app")?.classList.add("hidden");
+    document.getElementById("authScreen")?.classList.remove("hidden");
+    showRegisterScreen();
+  };
 }
 const _novaOpenSettings=openSettings;
 openSettings=function(){_novaOpenSettings();ensureGuestSettingsOption();};
