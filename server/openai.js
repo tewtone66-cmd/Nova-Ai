@@ -59,7 +59,7 @@ function providerFor(settings = {}, kind = "text") {
 function configFor(provider) {
   const configs = {
     openai: { key: process.env.OPENAI_API_KEY, baseURL: "https://api.openai.com/v1", model: process.env.OPENAI_MODEL || "gpt-5" },
-    gemini: { key: process.env.GEMINI_API_KEY, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", model: process.env.GEMINI_MODEL || "gemini-3.6-flash" },
+    gemini: { key: process.env.GEMINI_API_KEY, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", model: "gemini-3.6-flash" },
     openrouter: { key: process.env.OPENROUTER_API_KEY, baseURL: "https://openrouter.ai/api/v1", model: process.env.OPENROUTER_MODEL || "openai/gpt-5" }
   };
   return configs[provider] || null;
