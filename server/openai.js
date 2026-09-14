@@ -59,7 +59,7 @@ function providerFor(settings = {}, kind = "text") {
 function configFor(provider) {
   const configs = {
     openai: { key: process.env.OPENAI_API_KEY, baseURL: "https://api.openai.com/v1", model: process.env.OPENAI_MODEL || "gpt-5" },
-    gemini: { key: process.env.GEMINI_API_KEY, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", model: process.env.GEMINI_MODEL || "gemini-2.5-flash" },
+    gemini: { key: process.env.GEMINI_API_KEY, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", model: process.env.GEMINI_MODEL || "gemini-3.6-flash" },
     openrouter: { key: process.env.OPENROUTER_API_KEY, baseURL: "https://openrouter.ai/api/v1", model: process.env.OPENROUTER_MODEL || "openai/gpt-5" }
   };
   return configs[provider] || null;
@@ -94,13 +94,9 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
       yield { text: `⚠️ DEBUG OPENAI: ${error?.message || String(error)}` };
       return;
     }
-    let emitted = false;
     try {
       for await (const event of response) {
-        if (event.type === "response.output_text.delta" && event.delta) {
-          emitted = true;
-          yield { text: event.delta };
-        }
+        if (event.type === "response.output_text.delta" && event.delta) yield { text: event.delta };
         if (event.type === "response.completed" && event.response?.usage) yield { usageMetadata: event.response.usage };
       }
     } catch (error) {
@@ -121,11 +117,10 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
     yield { text: `⚠️ DEBUG ${provider.toUpperCase()}: ${error?.message || String(error)}` };
     return;
   }
-  let emitted = false;
   try {
     for await(const chunk of response) {
       const text = chunk.choices?.[0]?.delta?.content;
-      if(text){ emitted = true; yield {text}; }
+      if(text) yield {text};
       if(chunk.usage) yield {usageMetadata:chunk.usage};
     }
   } catch (error) {
