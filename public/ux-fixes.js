@@ -22,7 +22,7 @@
     .side-action:hover{background:var(--surface2);border-color:var(--border);transform:translateY(-1px)}
     .side-action::before{content:'';width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 20%,var(--surface)),var(--surface2));border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 5px 14px rgba(0,0,0,.05)}
     #openSettings::before{content:'⚙';font-size:18px}
-    #supportBtn::before{content:'';font-size:0;background:var(--accent);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h2v-8H5v-0.1A7 7 0 0 1 19 12V12h-3v8h2a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9Zm-8 9h2v5H6a1 1 0 0 1-1-1v-4Zm14 0h1v4a1 1 0 0 1-1 1h-1v-5Z'/%3E%3C/svg%3E") center/20px 20px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h2v-8H5v-0.1A7 7 0 0 1 19 12V12h-3v8h2a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9Zm-8 9h2v5H6a1 1 0 0 1-1-1v-4Zm14 0h1v4a1 1 0 0 1-1 1h-1v-5Z'/%3E%3C/svg%3E") center/20px 20px no-repeat}
+    #supportBtn::before{content:'';font-size:0;background:var(--accent);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h2v-8H5v-0.1A7 7 0 0 1 19 12V12h-3v8h2a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9Zm-8 9h2v5H6a1 1 0 0 1-1-1v-4Zm14 0h1v4a1 1 0 0 1-1 1h-1v-5Z'/%3E%3C/svg%3E") center/20px 20px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h2v-8H5v-0.1A7 7 0 0 1 19 12V12h-3v8h2a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9Zm-8 9h2v5H6a1 1 0 0 1-1-1v-4Zm14 0h1v4a1 1 0 0 1-1-1v-4Z'/%3E%3C/svg%3E") center/20px 20px no-repeat}
     #openSettings,#supportBtn{font-size:0}
     #openSettings::after,#supportBtn::after{font-size:13px}
     #openSettings::after{content:'تنظیمات'}
@@ -52,7 +52,6 @@
     #settingsBtn::before{content:'⚙';font-size:20px;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 16%,var(--surface)),var(--surface2));border:1px solid color-mix(in srgb,var(--accent) 20%,var(--border))}
     #supportOverlay .icon-btn{background:var(--surface2);border:1px solid var(--border)}
 
-    /* Nova V2: reduce expensive layout/paint work without changing behavior */
     .nova-v2 .chat-list{contain:strict}
     .nova-v2 .messages{contain:layout style}
     .nova-v2 .message{contain:layout paint}
@@ -92,6 +91,16 @@
     },{passive:true});
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupV2,{once:true});else setupV2();
+
+  // Theme bridge: the legacy app stores light/dark in its settings but only
+  // toggles the .dark class. The new Nova 2.0 stylesheet uses .light as the
+  // explicit light-theme opt-in, so mirror the legacy state without touching
+  // the application's settings or behavior.
+  const syncTheme=()=>{
+    document.body.classList.toggle('light',!document.body.classList.contains('dark'));
+  };
+  new MutationObserver(syncTheme).observe(document.body,{attributes:true,attributeFilter:['class']});
+  syncTheme();
 
   function setupSupport(){
     const btn=$('#supportBtn'),overlay=$('#supportOverlay'),close=$('#closeSupport'),form=$('#supportForm'),input=$('#supportInput'),box=$('#supportMessages');
