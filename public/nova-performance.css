@@ -1,0 +1,31 @@
+:root{
+  --bg:#0b0d0c;
+  --surface:#121614;
+  --surface2:#191e1b;
+  --text:#eef4ef;
+  --muted:#8f9b94;
+  --border:#252d28;
+  --shadow:0 14px 45px rgba(0,0,0,.28);
+}
+body:not(.dark){
+  --bg:#f6f8f7;
+  --surface:#fff;
+  --surface2:#f1f5f3;
+  --text:#17211c;
+  --muted:#718078;
+  --border:#e2e9e5;
+  --shadow:0 12px 40px rgba(18,35,27,.08);
+}
+.topbar{backdrop-filter:none;background:var(--surface)}
+.hero-avatar{box-shadow:none}
+.quick-grid button,.message .bubble{box-shadow:none}
+.quick-grid button:hover{transform:none}
+.composer{box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.overlay{backdrop-filter:none;background:rgba(0,0,0,.55)}
+.settings-panel{box-shadow:20px 0 55px rgba(0,0,0,.3)}
+.reveal,.reveal.is-visible{opacity:1;transform:none;transition:none}
+.quick-grid button,.chat-item,.composer,.tool-btn,.round-btn,.send-btn,.icon-btn,.chip,.theme-btn,.settings-panel,.overlay,.toast,.message .bubble,.avatar{transition-duration:120ms}
+.icon-btn,.round-btn,.tool-btn,.send-btn,.dots{font-family:ui-sans-serif,system-ui,sans-serif;font-weight:700}
+.quick-grid span{font-size:18px}
+@media(max-width:800px){.sidebar{transition:transform 160ms ease}.composer{box-shadow:0 8px 24px rgba(0,0,0,.18)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
