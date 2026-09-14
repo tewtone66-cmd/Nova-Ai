@@ -101,3 +101,61 @@ body{background:var(--bg);color:var(--text)}
   .hero-avatar{width:58px;height:58px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Nova 2.0 — premium ChatGPT-like workspace */
+.app{background:var(--bg)}
+.sidebar{width:278px;min-width:278px}
+.brand-mini{padding:4px 4px 2px}
+.brand-mini b{font-size:15px;letter-spacing:-.2px}
+.brand-mini span{font-size:10px;color:var(--muted)}
+.new-chat{height:42px;font-weight:700;border:1px solid var(--border);background:var(--surface2);color:var(--text)}
+.new-chat:hover{background:color-mix(in srgb,var(--accent) 9%,var(--surface2));border-color:color-mix(in srgb,var(--accent) 30%,var(--border))}
+.search-box{height:40px;background:var(--surface2);border:1px solid var(--border)}
+.search-box input{font-size:12px}
+.chat-item{min-height:42px;padding:9px 10px;border:1px solid transparent}
+.chat-item.active{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border-color:color-mix(in srgb,var(--accent) 18%,var(--border))}
+.chat-item:hover{background:var(--surface2)}
+.main{min-width:0;background:var(--bg)}
+.topbar{border-bottom:1px solid var(--border)}
+.nova-status{padding:5px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface2)}
+.limit-row{border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.welcome{padding-top:clamp(48px,10vh,100px)}
+.welcome .eyebrow{color:var(--muted);font-weight:800}
+.welcome h1{letter-spacing:-1.1px}
+.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:760px;margin-inline:auto}
+.quick-grid button{min-height:112px;text-align:right;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.quick-grid button b{font-size:13px}
+.quick-grid button small{font-size:10px;line-height:1.6;color:var(--muted)}
+.quick-grid button:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 28%,var(--border));background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+.messages{width:100%;max-width:900px}
+.message{gap:10px}
+.message .bubble{border:1px solid var(--border);background:var(--surface)}
+.message.user .bubble{background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-color:color-mix(in srgb,var(--accent) 22%,var(--border))}
+.message-actions{opacity:.7}
+.composer-wrap{border-top:0}
+.composer{border:1px solid var(--border);background:color-mix(in srgb,var(--surface) 96%,transparent)}
+.composer:focus-within{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));box-shadow:0 10px 32px rgba(0,0,0,.22),0 0 0 3px color-mix(in srgb,var(--accent) 8%,transparent)}
+.composer textarea{font-size:13px;line-height:1.7}
+.send-btn{background:var(--accent);color:#fff;border:0}
+.send-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.round-btn,.tool-btn{border:1px solid var(--border);background:var(--surface2)}
+.round-btn:hover,.tool-btn:hover{border-color:color-mix(in srgb,var(--accent) 30%,var(--border));background:color-mix(in srgb,var(--accent) 7%,var(--surface2))}
+.settings-panel{width:min(620px,100vw);background:var(--surface);border-left:1px solid var(--border)}
+.settings-section{border-bottom:1px solid color-mix(in srgb,var(--border) 75%,transparent)}
+.settings-section:last-child{border-bottom:0}
+
+/* Avoid expensive blur/glow on small devices */
+@media(max-width:800px){
+  .sidebar{width:min(310px,88vw);min-width:min(310px,88vw)}
+  .quick-grid{grid-template-columns:1fr 1fr;max-width:560px}
+  .quick-grid button{min-height:96px}
+  .welcome h1{letter-spacing:-.7px}
+  .composer{border-radius:13px}
+}
+@media(max-width:480px){
+  .quick-grid{grid-template-columns:1fr 1fr}
+  .quick-grid button{min-height:88px;padding:11px}
+  .quick-grid button small{display:none}
+  .welcome>p{font-size:12px}
+  .messages{padding-inline:8px}
+}
