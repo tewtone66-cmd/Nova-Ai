@@ -4,6 +4,10 @@ import path from "node:path";
 const file=path.resolve("server/index.js");
 let s=fs.readFileSync(file,"utf8");
 
+const storeImport='import {load, save, getUserData, findUserByUsername, findUserById, restoreRemoteBackup} from "./store.js";';
+const storeImportNew='import {load, save, getUserData, findUserByUsername, findUserById, restoreRemoteBackup, restoreRemoteUpdates} from "./store.js";';
+if(s.includes(storeImport)) s=s.replace(storeImport,storeImportNew);
+
 const sessionLine='app.use(cookieSession({name:"nova.sid",secret:process.env.SESSION_SECRET||"dev-secret-change-me",maxAge:1000*60*60*24*30,sameSite:"lax",secure:process.env.NODE_ENV === "production"}));';
 const gate=`
 const MAINTENANCE_FILE=path.resolve("data/maintenance.json");
@@ -27,13 +31,11 @@ if(!s.includes("app.get(\"/api/admin/maintenance\"")){
   s=s.replace(ownerAnchor,ownerAnchor+routes);
 }
 
-// Critical persistence fix: restoreRemoteBackup() returns the remote DB,
-// and boot must keep that restored object in memory. Previously boot restored
-// the file and then immediately overwrote it with the stale local `db` object,
-// which caused update logs (and other data) to disappear after every restart.
 const oldBoot='async function boot(){db=load();try{await restoreRemoteBackup(db);save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
-const newBoot='async function boot(){db=load();try{const restored=await restoreRemoteBackup();if(restored)db=restored;save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
+const oldBootFixed='async function boot(){db=load();try{const restored=await restoreRemoteBackup();if(restored)db=restored;save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
+const newBoot='async function boot(){db=load();try{const restored=await restoreRemoteBackup();if(restored)db=restored;const remoteUpdates=await restoreRemoteUpdates();if(Array.isArray(remoteUpdates)){db.updates=remoteUpdates;fs.mkdirSync(path.dirname(path.resolve("data/nova.json")),{recursive:true});fs.writeFileSync(path.resolve("data/nova.json"),JSON.stringify(db,null,2));}save(db);}catch(e){console.warn("Remote restore skipped:",e.message);}app.listen(port,()=>console.log(`Nova listening on ${port}`));}';
 if(s.includes(oldBoot)) s=s.replace(oldBoot,newBoot);
+else if(s.includes(oldBootFixed)) s=s.replace(oldBootFixed,newBoot);
 
 fs.writeFileSync(file,s);
 console.log("Nova maintenance patch ready");
