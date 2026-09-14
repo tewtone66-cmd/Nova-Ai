@@ -1,0 +1,30 @@
+import fs from "node:fs";
+import path from "node:path";
+
+const file=path.resolve("server/index.js");
+let s=fs.readFileSync(file,"utf8");
+const marker="// NOVA_OWNER_FEATURES_V2";
+if(s.includes(marker)){console.log("Nova owner features already patched");process.exit(0)}
+const anchor='function requireOwner(req,res,next){if(req.session?.owner===true)return next();return jsonError(res,401,"دسترسی فقط برای صاحب سایت مجاز است.","OWNER_UNAUTHORIZED");}';
+if(!s.includes(anchor))throw new Error("Owner auth anchor missing");
+const code=`
+${marker}
+const ownerOnline=new Map();
+function ownerLog(type,detail){try{db=load();db.ownerActivity=Array.isArray(db.ownerActivity)?db.ownerActivity:[];db.ownerActivity.unshift({id:crypto.randomUUID(),type,detail:String(detail||"").slice(0,500),at:Date.now()});db.ownerActivity=db.ownerActivity.slice(0,300);save(db)}catch{}}
+function ownerOnlineList(){db=load();const now=Date.now();return [...ownerOnline.entries()].filter(([,v])=>now-v.at<70000).map(([id,v])=>{const u=findUserById(db,id);return u?{id:u.id,username:u.username,isGuest:Boolean(u.isGuest),disabled:Boolean(u.disabled),chatId:v.chatId||null,lastSeen:v.at}:null}).filter(Boolean)}
+app.get("/api/admin/owner-overview",requireOwner,(req,res)=>{db=load();const users=db.users||[];let conversations=0,messages=0,memories=0;for(const a of users){const d=getUserData(db,a.id);conversations+=(d.conversations||[]).length;memories+=(d.memories||[]).length;for(const c of d.conversations||[])messages+=(c.messages||[]).length}const errors=Array.isArray(db.ownerErrors)?db.ownerErrors.slice(0,100):[];res.json({ok:true,users:users.length,conversations,messages,memories,online:ownerOnlineList(),errors,activity:Array.isArray(db.ownerActivity)?db.ownerActivity.slice(0,100):[],announcement:db.ownerAnnouncement||null,maintenance:typeof maintenanceOn==="function"?maintenanceOn():false})});
+app.get("/api/admin/owner-users",requireOwner,(req,res)=>{db=load();const q=String(req.query.q||"").trim().toLowerCase();const users=(db.users||[]).filter(u=>!q||String(u.username||"").toLowerCase().includes(q)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(u=>{const d=getUserData(db,u.id);return{id:u.id,username:u.username,isGuest:Boolean(u.isGuest),disabled:Boolean(u.disabled),createdAt:u.createdAt,conversations:(d.conversations||[]).length,memories:(d.memories||[]).length}});res.json({ok:true,users})});
+app.get("/api/admin/owner-users/:id",requireOwner,(req,res)=>{db=load();const u=findUserById(db,req.params.id);if(!u)return jsonError(res,404,"کاربر پیدا نشد.","NOT_FOUND");const d=getUserData(db,u.id);res.json({ok:true,user:{id:u.id,username:u.username,isGuest:Boolean(u.isGuest),disabled:Boolean(u.disabled),createdAt:u.createdAt},data:{settings:d.settings,conversations:d.conversations,memories:d.memories}})});
+app.post("/api/admin/owner-users/:id/action",requireOwner,(req,res)=>{db=load();const u=findUserById(db,req.params.id);if(!u)return jsonError(res,404,"کاربر پیدا نشد.","NOT_FOUND");const action=String(req.body?.action||"");if(action==="disable")u.disabled=true;else if(action==="enable")u.disabled=false;else if(action==="delete"){db.users=db.users.filter(x=>x.id!==u.id);delete db.data[u.id];ownerOnline.delete(u.id);save(db);ownerLog("USER_DELETE",u.username);return res.json({ok:true})}else return jsonError(res,400,"عملیات نامعتبر است.","VALIDATION");save(db);ownerLog("USER_"+action.toUpperCase(),u.username);res.json({ok:true,user:{id:u.id,username:u.username,disabled:Boolean(u.disabled)}})});
+app.post("/api/admin/owner-users/:id/support",requireOwner,(req,res)=>{db=load();const u=findUserById(db,req.params.id);if(!u)return jsonError(res,404,"کاربر پیدا نشد.","NOT_FOUND");const text=String(req.body?.text||"").trim().slice(0,2000);if(!text)return jsonError(res,400,"متن پیام خالی است.","VALIDATION");const d=getUserData(db,u.id);d.ownerInbox=Array.isArray(d.ownerInbox)?d.ownerInbox:[];d.ownerInbox.push({id:crypto.randomUUID(),text,at:Date.now(),source:"owner",label:"پشتیبانی Nova",delivered:false});d.ownerInbox=d.ownerInbox.slice(-50);save(db);ownerLog("SUPPORT_MESSAGE",u.username);res.json({ok:true})});
+app.post("/api/admin/owner-heartbeat",requireAuth,(req,res)=>{ownerOnline.set(req.user.id,{at:Date.now(),chatId:String(req.body?.chatId||"").slice(0,100)});res.json({ok:true})});
+app.get("/api/admin/owner-errors",requireOwner,(req,res)=>{db=load();res.json({ok:true,errors:Array.isArray(db.ownerErrors)?db.ownerErrors.slice(0,100):[]})});
+app.delete("/api/admin/owner-errors",requireOwner,(req,res)=>{db=load();db.ownerErrors=[];save(db);ownerLog("ERRORS_CLEAR","all");res.json({ok:true})});
+app.put("/api/admin/owner-announcement",requireOwner,(req,res)=>{db=load();const text=String(req.body?.text||"").trim().slice(0,500);db.ownerAnnouncement=text?{text,enabled:req.body?.enabled!==false,at:Date.now()}:null;save(db);ownerLog("ANNOUNCEMENT",text||"off");res.json({ok:true,announcement:db.ownerAnnouncement})});
+app.get("/api/admin/owner-system",requireOwner,(req,res)=>{res.json({ok:true,providers:{openai:Boolean(process.env.OPENAI_API_KEY),gemini:Boolean(process.env.GEMINI_API_KEY),openrouter:Boolean(process.env.OPENROUTER_API_KEY),stability:Boolean(process.env.STABILITY_API_KEY),pixverse:Boolean(process.env.PIXVERSE_API_KEY),runway:Boolean(process.env.RUNWAY_API_KEY)},model:"gemini-3.6-flash",maintenance:typeof maintenanceOn==="function"?maintenanceOn():false})});
+app.get("/api/admin/owner-backup",requireOwner,(req,res)=>{db=load();res.json({ok:true,users:(db.users||[]).length,data:Object.keys(db.data||{}).length,updates:(db.updates||[]).length,activity:(db.ownerActivity||[]).length})});
+app.use("/api",(req,res,next)=>{res.on("finish",()=>{if(res.statusCode>=500&&!req.path.startsWith("/admin/")){try{db=load();db.ownerErrors=Array.isArray(db.ownerErrors)?db.ownerErrors:[];db.ownerErrors.unshift({id:crypto.randomUUID(),code:"HTTP_"+res.statusCode,message:req.method+" "+req.path,at:Date.now()});db.ownerErrors=db.ownerErrors.slice(0,100);save(db)}catch{}}});next()});
+`;
+s=s.replace(anchor,anchor+code);
+fs.writeFileSync(file,s);
+console.log("Nova owner features v2 ready");
