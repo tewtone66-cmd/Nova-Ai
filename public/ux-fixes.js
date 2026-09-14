@@ -103,7 +103,8 @@
     }
   }
 
-  function normalizePicker(){const picker=q('.ai-mode-picker'),menu=q('.ai-mode-menu');if(!picker||!menu||picker.dataset.v5Bound)return;picker.dataset.v5Bound='1';on(picker,'click',e=>{e.preventDefault();e.stopImmediatePropagation();menu.classList.toggle('open');menu.classList.remove('hidden');},true);on(document,'click',e=>{if(!picker.contains(e.target))menu.classList.remove('open');},true);}
+  // Do not intercept the model-picker click. The native app.js handler must receive it.
+  function normalizePicker(){const picker=q('.ai-mode-picker'),menu=q('.ai-mode-menu');if(!picker||!menu||picker.dataset.v5Bound)return;picker.dataset.v5Bound='1';on(document,'click',e=>{if(!picker.contains(e.target))menu.classList.remove('open');},true);}
   function normalizeButtons(){const composer=q('.composer');if(!composer)return;qa('button',composer).forEach(b=>{b.style.setProperty('align-self','center','important');b.style.setProperty('margin-top','0','important');b.style.setProperty('margin-bottom','0','important');});}
   function stabilizeScroll(){const area=q('#chatView,.chat-list,.messages,.chat-messages,.conversation');if(!area||area.dataset.v5Scroll)return;area.dataset.v5Scroll='1';on(area,'scroll',()=>{area.style.scrollBehavior='auto';},{passive:true});}
   function preventDoubleSend(){const send=q('#sendBtn,.send-btn,[data-action="send"]');if(!send||send.dataset.v5Bound)return;send.dataset.v5Bound='1';on(send,'click',e=>{if(send.dataset.v5Busy==='1'){e.preventDefault();e.stopImmediatePropagation();return;}send.dataset.v5Busy='1';setTimeout(()=>{send.dataset.v5Busy='0';},1200);},true);}
