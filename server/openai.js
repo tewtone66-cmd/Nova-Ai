@@ -87,10 +87,20 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
   if (provider === "openai") {
     const ai = new OpenAI({ apiKey: config.key, baseURL: config.baseURL });
     const input = messages.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") }));
-    const response = await ai.responses.create({ model: config.model, instructions: buildInstructions(settings, kind), input, tools: useWeb ? [{type:"web_search_preview"}] : undefined, stream: true });
-    for await (const event of response) {
-      if (event.type === "response.output_text.delta") yield { text: event.delta };
-      if (event.type === "response.completed" && event.response?.usage) yield { usageMetadata: event.response.usage };
+    const response = await ai.responses.create({ model: config.model, instructions: buildInstructions(settings, kind), input, tools: useWeb ? [{type:"web_search_preview"}] : undefined, stream: true }, signal ? { signal } : undefined);
+    let emitted = false;
+    try {
+      for await (const event of response) {
+        if (event.type === "response.output_text.delta" && event.delta) {
+          emitted = true;
+          yield { text: event.delta };
+        }
+        if (event.type === "response.completed" && event.response?.usage) yield { usageMetadata: event.response.usage };
+      }
+    } catch (error) {
+      // If the upstream stream closes after text was already delivered, keep the
+      // answer instead of turning a useful partial/complete answer into a generic error.
+      if (!emitted) throw error;
     }
     return;
   }
@@ -101,10 +111,15 @@ export async function* streamResponse({ messages, settings = {}, kind = "text", 
     stream: true,
     stream_options: {include_usage:true}
   }, signal ? { signal } : undefined);
-  for await(const chunk of response) {
-    const text = chunk.choices?.[0]?.delta?.content;
-    if(text) yield {text};
-    if(chunk.usage) yield {usageMetadata:chunk.usage};
+  let emitted = false;
+  try {
+    for await(const chunk of response) {
+      const text = chunk.choices?.[0]?.delta?.content;
+      if(text){ emitted = true; yield {text}; }
+      if(chunk.usage) yield {usageMetadata:chunk.usage};
+    }
+  } catch (error) {
+    if (!emitted) throw error;
   }
 }
 
