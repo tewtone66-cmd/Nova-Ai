@@ -11,7 +11,7 @@ fs.mkdirSync(path.dirname(MAINTENANCE_FILE),{recursive:true});
 function maintenanceOn(){try{return Boolean(JSON.parse(fs.readFileSync(MAINTENANCE_FILE,"utf8")).enabled)}catch{return false}}
 function ownerHost(req){const configured=String(process.env.NOVA_OWNER_DOMAIN||"").trim().toLowerCase();const host=String(req.headers.host||"").split(":")[0].toLowerCase();return Boolean(configured&&host===configured)}
 function maintenanceKey(req){const expected=String(process.env.NOVA_MAINTENANCE_KEY||"");return Boolean(expected&&String(req.headers["x-nova-maintenance-key"]||"")===expected)}
-app.use((req,res,next)=>{if(!maintenanceOn()||ownerHost(req)||maintenanceKey(req)||req.path.startsWith("/api/admin/login"))return next();if(req.path.startsWith("/api/"))return res.status(503).json({ok:false,error:{code:"MAINTENANCE",message:"سایت در حال آپدیت است. لطفاً بعداً مجدداً تلاش کنید."}});return res.sendFile(path.resolve("public/maintenance.html"))});
+app.use((req,res,next)=>{if(!maintenanceOn()||ownerHost(req)||maintenanceKey(req)||req.path.startsWith("/dev")||req.path.startsWith("/api/admin/"))return next();if(req.path.startsWith("/api/"))return res.status(503).json({ok:false,error:{code:"MAINTENANCE",message:"سایت در حال آپدیت است. لطفاً بعداً مجدداً تلاش کنید."}});return res.sendFile(path.resolve("public/maintenance.html"))});
 `;
 if(!s.includes("const MAINTENANCE_FILE=")){
   if(!s.includes(sessionLine)) throw new Error("session anchor not found");
