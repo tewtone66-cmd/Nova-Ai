@@ -73,20 +73,23 @@ function pushRemoteBackup(db) {
 }
 
 export async function restoreRemoteBackup() {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
   try {
     const res = await fetch(`${UPSTASH_URL}/get/${REMOTE_KEY}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
     });
     const data = await res.json();
     if (data?.result) {
+      const restored = JSON.parse(data.result);
       fs.mkdirSync(dataDir, { recursive: true });
-      fs.writeFileSync(dbFile, data.result);
+      fs.writeFileSync(dbFile, JSON.stringify(restored, null, 2));
       console.log("Nova: restored account data from remote backup.");
+      return restored;
     }
   } catch (e) {
     console.error("Nova: could not restore remote backup (starting with local data instead):", e.message);
   }
+  return null;
 }
 
 export function getUserData(db, userId) {
@@ -96,15 +99,11 @@ export function getUserData(db, userId) {
   u.settings = { ...defaultUserSettings, ...u.settings };
   u.settings.memoryCategories = { ...defaultUserSettings.memoryCategories, ...(u.settings.memoryCategories || {}) };
 
-  // Keep the workspace profile name synced with the account username.
-  // Existing users are migrated only when they still have the old generic name.
   const account = findUserById(db, userId);
   if (account?.username && (!u.settings.userName || u.settings.userName === "کاربر" || u.settings.userName === "User")) {
     u.settings.userName = account.username;
   }
 
-  // One-time migration from the old white/green default. Users can still
-  // switch back to Light later from Settings; this never runs again.
   if (wasLegacyTheme) {
     u.settings.mode = "dark";
     u.settings.animationLevel = "reduced";
