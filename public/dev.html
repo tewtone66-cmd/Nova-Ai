@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0d0c">
+<title>Nova — Owner</title>
+<link rel="stylesheet" href="/dev.css">
+</head>
+<body>
+<main id="app" class="shell">
+  <section id="login" class="panel login-panel">
+    <div class="brand"><div class="logo">N</div><div><b>Nova Owner</b><span>Private Control Center</span></div></div>
+    <h1>ورود صاحب سایت</h1><p class="muted">این بخش فقط برای مدیریت Nova است.</p>
+    <form id="loginForm"><input id="username" autocomplete="username" placeholder="نام کاربری" required><input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور" required><button>ورود به پنل</button><p id="loginError" class="error"></p></form>
+  </section>
+  <section id="dashboard" class="hidden">
+    <header class="top"><div class="brand"><div class="logo">N</div><div><b>Nova Owner</b><span>Control Center</span></div></div><button id="logout" class="ghost">خروج</button></header>
+    <div class="grid stats"><article class="panel"><small>کاربران</small><strong id="users">—</strong></article><article class="panel"><small>گفتگوها</small><strong id="chats">—</strong></article><article class="panel"><small>Memory</small><strong id="memories">—</strong></article><article class="panel"><small>وضعیت</small><strong id="status">—</strong></article></div>
+    <div class="grid main-grid">
+      <section class="panel"><div class="section-head"><div><h2>وضعیت سرویس‌ها</h2><p class="muted">وضعیت کلیدهای Provider و سرور</p></div><button id="refresh" class="ghost">بروزرسانی</button></div><div id="providers" class="providers"></div></section>
+      <section class="panel"><h2>کاربران اخیر</h2><div id="recent" class="recent"></div></section>
+    </div>
+  </section>
+</main>
+<script src="/dev.js"></script>
+</body>
+</html>
